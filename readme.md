@@ -2,6 +2,8 @@
 
 VoodooSpark is a special case firmware build for the [Spark Core device](https://www.spark.io) to allow a remote interface definition across a wireless connection. The intent is to allow client side programs to directly control the Spark Core in real-time regardless of their programming language. The interface exposed is directly mapped to the one provided by Spark available in their [docs section](https://docs.spark.io/).
 
+__This README and project are a derivative from the [spark-io](https://github.com/rwaldron/spark-io) project by [Rick Waldron](https://github.com/rwaldron). I have extracted the firmware that I authored to allow it to be used by other projects and languages and be able to be updated independently based on Spark API changes.__
+
 ### Getting Started
 
 With your Spark device connected to a Wifi network and has already gone through the ["claim"/ownership process](http://docs.spark.io/#/start/step-1-power-the-core):
