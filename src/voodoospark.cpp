@@ -56,6 +56,13 @@ void ipArrayFromString(byte ipArray[], String ipString) {
   ipArray[3] = ipString.substring(dot1 + 1).toInt();
 }
 
+void reset() {
+  for (int i = 0; i < 20; i++) {
+    reading[i] = 0;
+    previous[i] = 0;
+  }
+}
+
 int connectToMyServer(String params) {
   //parse data
   int colonIndex = params.indexOf(":");
@@ -79,13 +86,6 @@ int connectToMyServer(String params) {
     if(DEBUG)
       Serial.println("Unable to connect to server: "+ip+":"+port);
     return -1; // failed to connect
-  }
-}
-
-void reset() {
-  for (int i = 0; i < 20; i++) {
-    reading[i] = 0;
-    previous[i] = 0;
   }
 }
 
