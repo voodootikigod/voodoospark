@@ -32,7 +32,7 @@
   ******************************************************************************
   */
 
-#define DEBUG 0
+static const bool DEBUG = 0;
 TCPClient client;
 
 
