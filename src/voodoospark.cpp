@@ -33,17 +33,15 @@
   */
 
 static const bool DEBUG = 0;
-TCPClient client;
 
+TCPClient client;
 
 byte reading[20];
 byte previous[20];
 
-
 Servo servos[20];
 
-
-long SerialSpeed[] = {  600, 1200, 2400, 4800, 9600, 14400, 19200, 28800, 38400, 57600, 115200 };
+long SerialSpeed[] = { 600, 1200, 2400, 4800, 9600, 14400, 19200, 28800, 38400, 57600, 115200 };
 
 
 void ipArrayFromString(byte ipArray[], String ipString) {
@@ -64,12 +62,12 @@ void reset() {
 }
 
 int connectToMyServer(String params) {
-  //parse data
+  // parse data
   int colonIndex = params.indexOf(":");
   String ip = params.substring(0, colonIndex);
   String port = params.substring(colonIndex + 1);
-  if(DEBUG)
-    Serial.println("Attempting to connect to server: "+ip+":"+port);
+  if (DEBUG)
+    Serial.println("Attempting to connect to server: " + ip + ":" + port);
 
   byte serverAddress[4];
   ipArrayFromString(serverAddress, ip);
@@ -79,12 +77,12 @@ int connectToMyServer(String params) {
     reset();
 
     if (DEBUG)
-      Serial.println("Connected to server: "+ip+":"+port);
+      Serial.println("Connected to server: " + ip + ":" + port);
     return 1; // successfully connected
 
   } else {
-    if(DEBUG)
-      Serial.println("Unable to connect to server: "+ip+":"+port);
+    if (DEBUG)
+      Serial.println("Unable to connect to server: " + ip + ":" + port);
     return -1; // failed to connect
   }
 }
@@ -133,14 +131,15 @@ void loop() {
       // parse and execute commands
 
       int action = client.read();
-      if(DEBUG)
-        Serial.println("Action received: "+('0'+action));
+      if (DEBUG)
+        Serial.println("Action received: " + ('0' + action));
+
       int pin, mode, val, type, speed, address, stop, len, i;
       switch (action) {
         case 0x00:  // pinMode
           pin = client.read();
           mode = client.read();
-          //mode is modeled after Standard Firmata
+          // mode is modeled after Standard Firmata
           if (mode == 0x00) {
             pinMode(pin, INPUT);
           } else if (mode == 0x02) {
@@ -319,7 +318,6 @@ void loop() {
           address = client.read();
           val = client.read();
           stop = client.read();
-
           Wire.requestFrom(address, val, stop);
           break;
         case 0x32:  // Wire.beginTransmission
