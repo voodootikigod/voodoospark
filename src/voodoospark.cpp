@@ -67,7 +67,7 @@ int connectToMyServer(String params) {
   //parse data
   int colonIndex = params.indexOf(":");
   String ip = params.substring(0, colonIndex);
-  String port = params.substring(colonIndex+1, params.length());
+  String port = params.substring(colonIndex + 1);
   if(DEBUG)
     Serial.println("Attempting to connect to server: "+ip+":"+port);
 
