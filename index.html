@@ -1,70 +1,32 @@
-<!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <title>Voodoospark by voodootikigod</title>
+---
+layout: default
+---
 
-    <link rel="stylesheet" href="stylesheets/styles.css">
-    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
-    <script src="javascripts/scale.fix.js"></script>
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<h2>What is VoodooSpark?</h2>
 
-    <!--[if lt IE 9]>
-    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
-  </head>
-  <body>
-    <div class="wrapper">
-      <header>
-        <h1>Voodoospark</h1>
-        <p>A RPC based firmware for a Spark Core device (like being connected, but without the wire!)</p>
-        <p class="view"><a href="https://github.com/voodootikigod/voodoospark">View the Project on GitHub <small>voodootikigod/voodoospark</small></a></p>
-        <ul>
-          <li><a href="https://github.com/voodootikigod/voodoospark/zipball/master">Download <strong>ZIP File</strong></a></li>
-          <li><a href="https://github.com/voodootikigod/voodoospark/tarball/master">Download <strong>TAR Ball</strong></a></li>
-          <li><a href="https://github.com/voodootikigod/voodoospark">View On <strong>GitHub</strong></a></li>
-        </ul>
-      </header>
-      <section>
-        <h3>
-<a name="welcome-to-github-pages" class="anchor" href="#welcome-to-github-pages"><span class="octicon octicon-link"></span></a>Welcome to GitHub Pages.</h3>
+<p>VoodooSpark is a customized firmware build for the <a href="https://www.spark.io">Spark Core device</a> to allow a remote interface definition of the firmware API over a local TCP connection. The intent is to allow client-side programs to directly control the Spark Core in real-time regardless of their programming language. The interface exposed is directly mapped to the one provided by Spark available in their <a href="https://docs.spark.io/">docs section</a>.</p>
+<p>The VoodooSpark uses the <a href="http://docs.spark.io/#/start/wait-what-is-this-thing-the-spark-cloud">Spark Cloud</a> and its REST API to provide IP address and port information to the local spark core. It will then initiate a direct connection to the host machine, on which will need to be a TCP server. Once the connection has been made, the host machine can drive the Spark Core using the binary protocol defined below to effectively execute firmware API level commands dynamically.</p>
 
-<p>This automatic page generator is the easiest way to create beautiful pages for all of your projects. Author your page content here using GitHub Flavored Markdown, select a template crafted by a designer, and publish. After your page is generated, you can check out the new branch:</p>
+<h2>Loading the Firmware</h2>
+<p>With your Spark device connected to a Wifi network and has already gone through the <a href="http://docs.spark.io/#/start/step-1-power-the-core">"claim"/ownership process</a>:</p>
+<ol>
+  <li>Open the <a href="https://www.spark.io/build">Spark.io Editor</a> with the credentials used when going through the claiming process.</li>
+  <li>Copy and paste the entire contents of <a href="https://raw.githubusercontent.com/voodootikigod/voodoospark/master/src/voodoospark.cpp">src/voodoospark.cpp</a> into the editor window.</li>
+  <li>Click "Verify"</li>
+  <li>Click "Flash"</li>
+  <li>Once the flashing process is complete, close the Spark.io Editor.</li>
+</ol>
+<p>Now your Spark Core is running VoodooSpark, lets connect to it!</p>
 
-<pre><code>$ cd your_repo_root/repo_name
-$ git fetch origin
-$ git checkout gh-pages
-</code></pre>
+<h2 id='connecting'>Connecting the Spark Core to You!</h2>
+<p>The way VoodooSpark works is to use the Spark Cloud as a manner for initiating a TCP connection from the Spark Device to a host machine. You will need a valid TCP port open through your firewall (if you have on up) and have a TCP server running on that port.</p>
+<p>In order to connect the Spark Core to your computer, you will need to issue an HTTP REST request to the Spark Cloud. This can be done via any programming language, but for this example we are using a simple CURL command. You will need some information outlined with curly braces below, please note the {DEVICE-ID} and {ACCESS-TOKEN} are available from the <a href="https://www.spark.io/build">Spark.io Editor</a></p>
+<pre><code>curl -X POST https://api.spark.io/v1/devices/{DEVICE-ID}/connect \
+     -D "access_token={ACCESS-TOKEN}&amp;params={IP-ADDRESS}:{PORT}"</code></pre>
+<p>Once you issue this command the Spark Core will attempt to connect to the provide {IP-ADDRESS} machine on the provide {PORT} value. If you have troubles, please make sure you verify that those are correct. Once connected you can begin to send any <a href="/api.html">API command</a> through the TCP connection.</p>
 
-<p>If you're using the GitHub for Mac, simply sync your repository and you'll see the new branch.</p>
+<h2>Reference Implementations</h2>
+<ul>
+<li><a href="http://github.com/rwaldron/spark-io">Spark-io <i>node.js</i></a></li>
+</ul>
 
-<h3>
-<a name="designer-templates" class="anchor" href="#designer-templates"><span class="octicon octicon-link"></span></a>Designer Templates</h3>
-
-<p>We've crafted some handsome templates for you to use. Go ahead and continue to layouts to browse through them. You can easily go back to edit your page before publishing. After publishing your page, you can revisit the page generator and switch to another theme. Your Page content will be preserved if it remained markdown format.</p>
-
-<h3>
-<a name="rather-drive-stick" class="anchor" href="#rather-drive-stick"><span class="octicon octicon-link"></span></a>Rather Drive Stick?</h3>
-
-<p>If you prefer to not use the automatic generator, push a branch named <code>gh-pages</code> to your repository to create a page manually. In addition to supporting regular HTML content, GitHub Pages support Jekyll, a simple, blog aware static site generator written by our own Tom Preston-Werner. Jekyll makes it easy to create site-wide headers and footers without having to copy them across every page. It also offers intelligent blog support and other advanced templating features.</p>
-
-<h3>
-<a name="authors-and-contributors" class="anchor" href="#authors-and-contributors"><span class="octicon octicon-link"></span></a>Authors and Contributors</h3>
-
-<p>You can <a href="https://github.com/blog/821" class="user-mention">@mention</a> a GitHub username to generate a link to their profile. The resulting <code>&lt;a&gt;</code> element will link to the contributor's GitHub Profile. For example: In 2007, Chris Wanstrath (<a href="https://github.com/defunkt" class="user-mention">@defunkt</a>), PJ Hyett (<a href="https://github.com/pjhyett" class="user-mention">@pjhyett</a>), and Tom Preston-Werner (<a href="https://github.com/mojombo" class="user-mention">@mojombo</a>) founded GitHub.</p>
-
-<h3>
-<a name="support-or-contact" class="anchor" href="#support-or-contact"><span class="octicon octicon-link"></span></a>Support or Contact</h3>
-
-<p>Having trouble with Pages? Check out the documentation at <a href="http://help.github.com/pages">http://help.github.com/pages</a> or contact <a href="mailto:support@github.com">support@github.com</a> and we’ll help you sort it out.</p>
-      </section>
-    </div>
-    <footer>
-      <p>Project maintained by <a href="https://github.com/voodootikigod">voodootikigod</a></p>
-      <p>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></p>
-    </footer>
-    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
-    
-  </body>
-</html>

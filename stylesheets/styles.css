@@ -19,7 +19,7 @@ body {
 }
 
 .wrapper {
-  width: 640px;
+  width: 900px;
   margin: 0 auto;
   background: #DEDEDE;
   -webkit-border-radius: 8px;
@@ -302,7 +302,7 @@ footer p + p {
   float: right;
 }
 
-@media print, screen and (max-width: 740px) {
+@media print, screen and (max-width: 900px) {
   body {
     padding: 0;
   }
