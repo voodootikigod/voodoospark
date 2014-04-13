@@ -1,0 +1,8 @@
+name: JSConf US 2014
+description:
+author: Chris Williams
+
+encoding: utf-8
+markdown: kramdown
+kramdown:
+  input: GFM
