@@ -33,26 +33,18 @@
   */
 
 static const bool DEBUG = 0;
+static const int PORT = 1337;
 
+// TCPClient client;
+TCPServer server;
 TCPClient client;
 
 byte reading[20];
 byte previous[20];
-
 Servo servos[20];
 
 long SerialSpeed[] = { 600, 1200, 2400, 4800, 9600, 14400, 19200, 28800, 38400, 57600, 115200 };
 
-
-void ipArrayFromString(byte ipArray[], String ipString) {
-  int dot1 = ipString.indexOf('.');
-  ipArray[0] = ipString.substring(0, dot1).toInt();
-  int dot2 = ipString.indexOf('.', dot1 + 1);
-  ipArray[1] = ipString.substring(dot1 + 1, dot2).toInt();
-  dot1 = ipString.indexOf('.', dot2 + 1);
-  ipArray[2] = ipString.substring(dot2 + 1, dot1).toInt();
-  ipArray[3] = ipString.substring(dot1 + 1).toInt();
-}
 
 void reset() {
   for (int i = 0; i < 20; i++) {
@@ -61,37 +53,65 @@ void reset() {
   }
 }
 
-int connectToMyServer(String params) {
-  // parse data
-  int colonIndex = params.indexOf(":");
-  String ip = params.substring(0, colonIndex);
-  String port = params.substring(colonIndex + 1);
-  if (DEBUG)
-    Serial.println("Attempting to connect to server: " + ip + ":" + port);
 
-  byte serverAddress[4];
-  ipArrayFromString(serverAddress, ip);
-  int serverPort = port.toInt();
-  if (client.connect(serverAddress, serverPort)) {
 
-    reset();
-
-    if (DEBUG)
-      Serial.println("Connected to server: " + ip + ":" + port);
-    return 1; // successfully connected
-
-  } else {
-    if (DEBUG)
-      Serial.println("Unable to connect to server: " + ip + ":" + port);
-    return -1; // failed to connect
-  }
+String endpoint() {
+  return Network.localIP()+":"+PORT;
 }
+
+
+
+
+
+
+
+//
+//
+//
+// void ipArrayFromString(byte ipArray[], String ipString) {
+//   int dot1 = ipString.indexOf('.');
+//   ipArray[0] = ipString.substring(0, dot1).toInt();
+//   int dot2 = ipString.indexOf('.', dot1 + 1);
+//   ipArray[1] = ipString.substring(dot1 + 1, dot2).toInt();
+//   dot1 = ipString.indexOf('.', dot2 + 1);
+//   ipArray[2] = ipString.substring(dot2 + 1, dot1).toInt();
+//   ipArray[3] = ipString.substring(dot1 + 1).toInt();
+// }
+//
+//
+// int connectToMyServer(String params) {
+//   // parse data
+//   int colonIndex = params.indexOf(":");
+//   String ip = params.substring(0, colonIndex);
+//   String port = params.substring(colonIndex + 1);
+//   if (DEBUG)
+//     Serial.println("Attempting to connect to server: " + ip + ":" + port);
+//
+//   byte serverAddress[4];
+//   ipArrayFromString(serverAddress, ip);
+//   int serverPort = port.toInt();
+//   if (client.connect(serverAddress, serverPort)) {
+//
+//     reset();
+//
+//     if (DEBUG)
+//       Serial.println("Connected to server: " + ip + ":" + port);
+//     return 1; // successfully connected
+//
+//   } else {
+//     if (DEBUG)
+//       Serial.println("Unable to connect to server: " + ip + ":" + port);
+//     return -1; // failed to connect
+//   }
+// }
+
+
 
 void send(int action, int pin, int value) {
   if (previous[pin] != value) {
-    client.write(action);
-    client.write(pin);
-    client.write(value);
+    server.write(action);
+    server.write(pin);
+    server.write(value);
   }
   previous[pin] = value;
 }
@@ -118,16 +138,19 @@ void report() {
 }
 
 void setup() {
-  Spark.function("connect", connectToMyServer);
+  server.begin();
   if (DEBUG)
     Serial.begin(115200);
+
+  Spark.function("endpoint", endpoint);
+
 }
 
 void loop() {
   report();
 
   if (client.connected()) {
-    if (client.available()) {
+    while (client.available()) {
       // parse and execute commands
 
       int action = client.read();
@@ -163,16 +186,16 @@ void loop() {
         case 0x03:  // digitalRead
           pin = client.read();
           val = digitalRead(pin);
-          client.write(0x03);
-          client.write(pin);
-          client.write(val);
+          server.write(0x03);
+          server.write(pin);
+          server.write(val);
           break;
         case 0x04:  // analogRead
           pin = client.read();
           val = analogRead(pin);
-          client.write(0x04);
-          client.write(pin);
-          client.write(val);
+          server.write(0x04);
+          server.write(pin);
+          server.write(val);
           break;
         case 0x05: // set always send bit
           pin = client.read();
@@ -205,9 +228,9 @@ void loop() {
           } else {
             val = Serial1.peek();
           }
-          client.write(0x07);
-          client.write(type);
-          client.write(val);
+          server.write(0x07);
+          server.write(type);
+          server.write(val);
           break;
         case 0x13:  // serial.available()
           type = client.read();
@@ -216,9 +239,9 @@ void loop() {
           } else {
             val = Serial1.available();
           }
-          client.write(0x07);
-          client.write(type);
-          client.write(val);
+          server.write(0x07);
+          server.write(type);
+          server.write(val);
           break;
         case 0x14:  // serial.write
           type = client.read();
@@ -238,9 +261,9 @@ void loop() {
           } else {
             val = Serial1.read();
           }
-          client.write(0x16);
-          client.write(type);
-          client.write(val);
+          server.write(0x16);
+          server.write(type);
+          server.write(val);
           break;
         case 0x16: // serial.flush
           type = client.read();
@@ -300,8 +323,8 @@ void loop() {
         case 0x25:  // SPI.transfer
           val = client.read();
           val = SPI.transfer(val);
-          client.write(0x24);
-          client.write(val);
+          server.write(0x24);
+          server.write(val);
           break;
 
 
@@ -327,8 +350,8 @@ void loop() {
         case 0x33:  // Wire.endTransmission
           stop = client.read();
           val = Wire.endTransmission(stop);
-          client.write(0x33);
-          client.write(val);
+          server.write(0x33);
+          server.write(val);
           break;
         case 0x34:  // Wire.write
           len = client.read();
@@ -337,18 +360,18 @@ void loop() {
             wireData[i] = client.read();
           }
           val = Wire.write(wireData, len);
-          client.write(0x34);
-          client.write(val);
+          server.write(0x34);
+          server.write(val);
           break;
         case 0x35:  // Wire.available
           val = Wire.available();
-          client.write(0x35);
-          client.write(val);
+          server.write(0x35);
+          server.write(val);
           break;
         case 0x36:  // Wire.read
           val = Wire.read();
-          client.write(0x36);
-          client.write(val);
+          server.write(0x36);
+          server.write(val);
           break;
 
 
@@ -369,16 +392,16 @@ void loop() {
         case 0x43:
           pin = client.read();
           val = servos[pin].read();
-          client.write(0x43);
-          client.write(pin);
-          client.write(val);
+          server.write(0x43);
+          server.write(pin);
+          server.write(val);
           break;
         case 0x44:
           pin = client.read();
           val = servos[pin].attached();
-          client.write(0x44);
-          client.write(pin);
-          client.write(val);
+          server.write(0x44);
+          server.write(pin);
+          server.write(val);
           break;
         case 0x45:
           pin = client.read();
