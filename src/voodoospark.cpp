@@ -2,10 +2,10 @@
   ******************************************************************************
   * @file    voodoospark.cpp
   * @author  Chris Williams
-  * @version V1.0.0
-  * @date    24-January-2014
+  * @version V2.0.0
+  * @date    07-May-2014
   * @brief   Exposes the firmware level API through a TCP Connection intiated
-  *          via the spark cloud service
+  *          to the spark device
   ******************************************************************************
   Copyright (c) 2014 Chris Williams  All rights reserved.
 
@@ -32,11 +32,12 @@
   ******************************************************************************
   */
 
-static const bool DEBUG = 0;
-static const int PORT = 1337;
+static const bool DEBUG = 1;
+
+static const int PORT = 48879; // 0xbeef
 
 // TCPClient client;
-TCPServer server;
+TCPServer server = TCPServer(PORT);
 TCPClient client;
 
 byte reading[20];
@@ -53,57 +54,6 @@ void reset() {
   }
 }
 
-
-
-String endpoint() {
-  return Network.localIP()+":"+PORT;
-}
-
-
-
-
-
-
-
-//
-//
-//
-// void ipArrayFromString(byte ipArray[], String ipString) {
-//   int dot1 = ipString.indexOf('.');
-//   ipArray[0] = ipString.substring(0, dot1).toInt();
-//   int dot2 = ipString.indexOf('.', dot1 + 1);
-//   ipArray[1] = ipString.substring(dot1 + 1, dot2).toInt();
-//   dot1 = ipString.indexOf('.', dot2 + 1);
-//   ipArray[2] = ipString.substring(dot2 + 1, dot1).toInt();
-//   ipArray[3] = ipString.substring(dot1 + 1).toInt();
-// }
-//
-//
-// int connectToMyServer(String params) {
-//   // parse data
-//   int colonIndex = params.indexOf(":");
-//   String ip = params.substring(0, colonIndex);
-//   String port = params.substring(colonIndex + 1);
-//   if (DEBUG)
-//     Serial.println("Attempting to connect to server: " + ip + ":" + port);
-//
-//   byte serverAddress[4];
-//   ipArrayFromString(serverAddress, ip);
-//   int serverPort = port.toInt();
-//   if (client.connect(serverAddress, serverPort)) {
-//
-//     reset();
-//
-//     if (DEBUG)
-//       Serial.println("Connected to server: " + ip + ":" + port);
-//     return 1; // successfully connected
-//
-//   } else {
-//     if (DEBUG)
-//       Serial.println("Unable to connect to server: " + ip + ":" + port);
-//     return -1; // failed to connect
-//   }
-// }
 
 
 
@@ -137,19 +87,25 @@ void report() {
   }
 }
 
+char myIpString[32];
+
+
 void setup() {
   server.begin();
   if (DEBUG)
     Serial.begin(115200);
 
-  Spark.function("endpoint", endpoint);
+  IPAddress myIp = Network.localIP();
+  sprintf(myIpString, "%d.%d.%d.%d:%d", myIp[0], myIp[1], myIp[2], myIp[3], PORT);
+  Spark.variable("endpoint", myIpString, STRING);
 
 }
 
 void loop() {
-  report();
+
 
   if (client.connected()) {
+    report();
     while (client.available()) {
       // parse and execute commands
 
