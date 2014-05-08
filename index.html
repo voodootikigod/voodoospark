@@ -41,20 +41,20 @@ layout: default
 <ul>
 <li><a href="http://github.com/rwaldron/spark-io">Spark-io</a> - <i>Node.js</i></li>
 </ul>
-
-<h2 id="api">API Command Guide</h2>
+<div id="api">
+<h2 >API Command Guide</h2>
 <p>This outlines the API exposed by the VoodooSpark firmware. It requires the TCP connection to be established to the Spark Device as <a href="#connecting">outlined here</a>. All of these commands are designed to allow you to create a state change in the Spark Device. They <i>may</i> return information, but that is not a requirement. Please be aware that all values expressed are as single byte in length unless otherwise specified.</p>
 
 {% for item in site.data.commands %}
 <div id='{{item.id}}'>
   <h4><a href="{{ item.api_target_url }}">{{ item.api_target }}</a></h4>
-  <p>
-    <b>Direction:</b> {{ item.direction }}<br/>
-    <b>First Byte:</b> {{ item.command }}<br/>
-    <b>Subsequent Bytes/Parameters:</b><br/>
-    {{ item.parameters  | markdownify }}<br/>
-    <b>Return:</b> {{item.return}}
-  </p>
+
+  <b>Direction:</b> {{ item.direction }}<br/>
+  <b>First Byte:</b> {{ item.command }}<br/>
+  <b>Subsequent Bytes/Parameters:</b><br/>
+  {{ item.parameters  | markdownify }}
+  <b>Return:</b> {{item.return}}
 
 </div>
 {% endfor %}
+</div>
