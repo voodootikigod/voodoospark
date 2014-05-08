@@ -39,7 +39,6 @@ static const int PORT = 48879; // 0xbeef
 // TCPClient client;
 TCPServer server = TCPServer(PORT);
 TCPClient client;
-byte readBuffer[255];
 byte reading[20];
 byte previous[20];
 Servo servos[20];
@@ -110,6 +109,8 @@ void loop() {
     int length = client.available();
     if (length) {
       int idx = 0;
+
+      byte readBuffer[length];
       client.read(readBuffer, length);
     //   // parse and execute commands
 
