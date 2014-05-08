@@ -8,7 +8,7 @@ layout: default
 <p>The VoodooSpark uses the <a href="http://docs.spark.io/#/start/wait-what-is-this-thing-the-spark-cloud">Spark Cloud</a> and its REST API to provide IP address and port information to the local spark core. It will then initiate a direct connection to the host machine, on which will need to be a TCP server. Once the connection has been made, the host machine can drive the Spark Core using the binary protocol defined below to effectively execute firmware API level commands dynamically.</p>
 
 <h2>Loading the Firmware</h2>
-<p>With your Spark device connected to a Wifi network and has already gone through the <a href="http://docs.spark.io/#/start/step-1-power-the-core">"claim"/ownership process</a>:</p>
+<p>With your Spark device connected to a Wifi network and having already gone through the standard <a href="http://docs.spark.io/#/start/step-1-power-the-core">"claim"/ownership process</a>:</p>
 <ol>
   <li>Open the <a href="https://www.spark.io/build">Spark.io Editor</a> with the credentials used when going through the claiming process.</li>
   <li>Copy and paste the entire contents of <a href="https://raw.githubusercontent.com/voodootikigod/voodoospark/master/src/voodoospark.cpp">src/voodoospark.cpp</a> into the editor window.</li>
@@ -18,8 +18,8 @@ layout: default
 </ol>
 <p>Now your Spark Core is running VoodooSpark, lets connect to it!</p>
 
-<h2 id='connecting'>Connecting to the Spark Core!</h2>
-<p>The way VoodooSpark works is to use the Spark Cloud as a channel to identify where to initiate the TCP connection to the Spark Device from your host machine.</p>
+<h2 id='connecting'>Connecting to the Spark Core</h2>
+<p>The way VoodooSpark works is to use the Spark Cloud as a lookup service to find out the IP Address of the Spark Device. With that address, we open a TCP connection to the Spark Device from your host machine and send it commands. It is that simple.</p>
 <p>In order to connect the Spark Core to your computer, you will first need to issue an HTTP GET request to the Spark Cloud. This can be done via any programming language, but for this example we are using a simple CURL command. You will need some information outlined with curly braces below, please note the {DEVICE-ID} and {ACCESS-TOKEN} are available from the <a href="https://www.spark.io/build">Spark.io Editor</a></p>
 <pre><code>curl https://api.spark.io/v1/devices/{DEVICE-ID}/endpoint?access_token={ACCESS-TOKEN}"</code></pre>
 <p>This should return a JSON document that looks similar to this:</p>
@@ -34,11 +34,27 @@ layout: default
     "deviceID": "{DEVICE-ID}"
   }
 }</code></pre>
-<p>The "result" value is the IP address of the Spark Device on your local network and the part after the colon (:) is the port that the server is currently listening on. This port will by default be 48879 (0xBEEF), but can be changed in the voodoospark firmware. Please do not hardcode the port for this reason, rather use the data returned back as the response.</p>
-<p>With the IP Address and TCP port information, use your favorite language or TCP client to connect to the device (even telnet will work) and send it the necessary BINARY protocol commands to trigger the desired API interactions as defined in our <a href="http://voodootikigod.github.io/voodoospark/api.html">API Command guide</a>.</p>
+<p>The "result" value is the IP address of the Spark Device on your local network and the part after the colon (:) is the port that the server is currently listening on. This port will be 48879 (0xBEEF) by default, but can be changed in the voodoospark firmware. Please do not hardcode the port for this reason, instead just use the data returned back as the response.</p>
+<p>With the IP Address and TCP port information, use your favorite language or TCP client to connect to the device (even telnet will work) and send it the necessary BINARY protocol commands to trigger the desired API interactions as defined in our <a href="#api">API Command Guide</a> below, which is just a smaller version of the <a href="http://docs.spark.io/#/firmware">Core Firmware API</a> provided by the Spark itself.</p>
 
 <h2>Reference Implementations</h2>
 <ul>
-<li><a href="http://github.com/rwaldron/spark-io">Spark-io <i>node.js</i></a></li>
+<li><a href="http://github.com/rwaldron/spark-io">Spark-io</a> - <i>Node.js</i></li>
 </ul>
 
+<h2 id="api">API Command Guide</h2>
+<p>This outlines the API exposed by the VoodooSpark firmware. It requires the TCP connection to be established to the Spark Device as <a href="#connecting">outlined here</a>. All of these commands are designed to allow you to create a state change in the Spark Device. They <i>may</i> return information, but that is not a requirement. Please be aware that all values expressed are as single byte in length unless otherwise specified.</p>
+
+{% for item in site.data.commands %}
+<div id='{{item.id}}'>
+  <h4><a href="{{ item.api_target_url }}">{{ item.api_target }}</a></h4>
+  <p>
+    <b>Direction:</b> {{ item.direction }}<br/>
+    <b>First Byte:</b> {{ item.command }}<br/>
+    <b>Subsequent Bytes/Parameters:</b><br/>
+    {{ item.parameters  | markdownify }}<br/>
+    <b>Return:</b> {{item.return}}
+  </p>
+
+</div>
+{% endfor %}

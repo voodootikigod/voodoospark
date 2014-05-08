@@ -1,0 +1,151 @@
+- direction: To Spark
+  command: 0x00
+  id: pinmode
+  api_target: Pin Mode
+  api_target_url: http://docs.spark.io/#/firmware/setup-pinmode
+  parameters: >
+    1. **Pin Number:** The number of the pin whose mode you wish to set
+
+    2. **Mode:** The mode to set the pin to where the following values map to the named modes:
+       * 0 => INPUT
+       * 1 => OUTPUT
+       * 2 => INPUT_PULLUP
+       * 3 => INPUT_PULLDOWN
+  return: None
+
+- direction: To Spark
+  command: 0x01
+  id: digitalwrite
+  api_target: Digital Write
+  api_target_url: http://docs.spark.io/#/firmware/i-o-digitalwrite
+  parameters: >
+    1. **Pin Number:** The number of the pin whose value you wish to set
+
+    2. **Value:** The value to set the pin.
+  return: None
+
+- direction: To Spark
+  command: 0x02
+  id: analogwrite
+  api_target: Analog Write
+  api_target_url: http://docs.spark.io/#/firmware/i-o-analogwrite
+  parameters: >
+    1. **Pin Number:** The number of the pin whose value you wish to set
+
+    2. **Value:** The value to set the pin.
+  return: None
+
+- direction: To Spark
+  command: 0x03
+  id: digitalread
+  api_target: Digital Read
+  api_target_url: http://docs.spark.io/#/firmware/i-o-digitalread
+  parameters: >
+    1. **Pin Number:** The number of the pin whose value you wish to set
+  return: 3 bytes which have 0x03 as the first byte, the pin as the second, and the value as the third.
+
+- direction: To Spark
+  command: 0x04
+  id: analogwrite
+  api_target: Analog Read
+  api_target_url: http://docs.spark.io/#/firmware/i-o-analogread
+  parameters: >
+    1. **Pin Number:** The number of the pin whose value you wish to set
+  return: 3 bytes which have 0x03 as the first byte, the pin as the second, and the value as the third.
+
+- direction: To Spark
+  command: 0x05
+  id: alwayssend
+  api_target: Always Send Bit
+  api_target_url: #
+  parameters: >
+    1. **Pin Number:** The number of the pin whose value will always be sent in the report send back.
+
+    2. **Value:** The value to set the pin (boolean value).
+  return: None
+
+- direction: To Spark
+  command: 0x10
+  id: serialbegin
+  api_target: Serial.begin
+  api_target_url: http://docs.spark.io/#/firmware/serial-begin
+  parameters: >
+    1. **Type:** 0 will use Serial and any other value will use Serial1.
+
+    2. **Speed:** parameter that specifies the baud rate from the Baud Rate mapping.
+  return: None
+
+- direction: To Spark
+  command: 0x11
+  id: serialend
+  api_target: Serial.end
+  api_target_url: http://docs.spark.io/#/firmware/serial-end
+  parameters: >
+    1. **Type:** 0 will use Serial and any other value will use Serial1.
+  return: None
+
+- direction: To Spark
+  command: 0x12
+  id: serialpeek
+  api_target: Serial.peek
+  api_target_url: http://docs.spark.io/#/firmware/serial-peek
+  parameters: >
+    1. **Type:** 0 will use Serial and any other value will use Serial1.
+  return: 3 bytes which have 0x12 as the first byte, the type as the second, and the return value as the third.
+
+- direction: To Spark
+  command: 0x13
+  id: serialavailable
+  api_target: Serial.available
+  api_target_url: http://docs.spark.io/#/firmware/serial-available
+  parameters: >
+    1. **Type:** 0 will use Serial and any other value will use Serial1.
+  return: 3 bytes which have 0x13 as the first byte, the type as the second, and the return value as the third.
+
+- direction: To Spark
+  command: 0x14
+  id: serialwrite
+  api_target: Serial.write
+  api_target_url: http://docs.spark.io/#/firmware/serial-write
+  parameters: >
+    1. **Type:** 0 will use Serial and any other value will use Serial1.
+
+    2. **Length:** The length of the message to write.
+
+    2. **Data:** Length total number of bytes to write to the identified serial port.
+  return: None
+
+- direction: To Spark
+  command: 0x15
+  id: serialread
+  api_target: Serial.read
+  api_target_url: http://docs.spark.io/#/firmware/serial-read
+  parameters: >
+    1. **Type:** 0 will use Serial and any other value will use Serial1.
+
+  return: 3 bytes which have 0x15 as the first byte, the type as the second, and the return value as the third.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+- direction: To Spark
+  command: 0x16
+  id: serialflush
+  api_target: Serial.flush
+  api_target_url: http://docs.spark.io/#/firmware/serial-flush
+  parameters: >
+    1. **Type:** 0 will use Serial and any other value will use Serial1.
+
+  return: None
+
+

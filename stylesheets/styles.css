@@ -354,3 +354,6 @@ footer p + p {
     content: 'at http://github.com/';
   }
 }
+
+
+h4 { border-bottom: 1px solid #333; padding-bottom: 5px;margin-bottom: 5px;}
