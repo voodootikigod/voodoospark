@@ -34,9 +34,7 @@ layout: default
     "deviceID": "{DEVICE-ID}"
   }
 }</code></pre>
-<p>The "result" value is the IP address of the Spark Device on your local network and the part after the colon (:) is the port that the server is currently listening on. This port will by default be 48879 (0xBEEF), but can be changed in the voodoospark firmware. Please do not hardcode the port for this reason, rather use the data returned back as the response.</p>
-<p>With the IP Address and TCP port information, use your favorite language or TCP client to connect to the device (even telnet will work) and send it the necessary BINARY protocol commands to trigger the desired API interactions as defined in our <a href="/api.html">API Command guide</a>.</p>
-Once you issue this command the Spark Core will attempt to connect to the provide {IP-ADDRESS} machine on the provide {PORT} value. If you have troubles, please make sure you verify that those are correct. Once connected you can begin to send any <a href="http://voodootikigod.github.io/voodoospark/api.html">API command</a> through the TCP connection.</p>
+<p>The "result" value is the IP address of the Spark Device on your local network and the part after the colon (:) is the port that the server is currently listening on. This port will by default be 48879 (0xBEEF), but can be changed in the voodoospark firmware. Please do not hardcode the port for this reason, rather use the data returned back as the response. Once connected you can begin to send any <a href="http://voodootikigod.github.io/voodoospark/api.html">API command</a> through the TCP connection.</p>
 
 <h2>Reference Implementations</h2>
 <ul>
