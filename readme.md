@@ -1,4 +1,4 @@
-# VoodooSpark
+# VoodooSpark 2.0.0
 
 VoodooSpark is a special case firmware build for the [Spark Core device](https://www.spark.io) to allow a remote interface definition across a wireless connection. The intent is to allow client side programs to directly control the Spark Core in real-time regardless of their programming language. The interface exposed is directly mapped to the one provided by Spark available in their [docs section](https://docs.spark.io/).
 
