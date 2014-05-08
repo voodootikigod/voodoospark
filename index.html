@@ -18,7 +18,7 @@ layout: default
 </ol>
 <p>Now your Spark Core is running VoodooSpark, lets connect to it!</p>
 
-<h2 id='connecting'>Connecting the Spark Core to You!</h2>
+<h2 id='connecting'>Connecting to the Spark Core!</h2>
 <p>The way VoodooSpark works is to use the Spark Cloud as a channel to identify where to initiate the TCP connection to the Spark Device from your host machine.</p>
 <p>In order to connect the Spark Core to your computer, you will first need to issue an HTTP GET request to the Spark Cloud. This can be done via any programming language, but for this example we are using a simple CURL command. You will need some information outlined with curly braces below, please note the {DEVICE-ID} and {ACCESS-TOKEN} are available from the <a href="https://www.spark.io/build">Spark.io Editor</a></p>
 <pre><code>curl https://api.spark.io/v1/devices/{DEVICE-ID}/endpoint?access_token={ACCESS-TOKEN}"</code></pre>
@@ -34,7 +34,8 @@ layout: default
     "deviceID": "{DEVICE-ID}"
   }
 }</code></pre>
-<p>The "result" value is the IP address of the Spark Device on your local network and the part after the colon (:) is the port that the server is currently listening on. This port will by default be 48879 (0xBEEF), but can be changed in the voodoospark firmware. Please do not hardcode the port for this reason, rather use the data returned back as the response. Once connected you can begin to send any <a href="http://voodootikigod.github.io/voodoospark/api.html">API command</a> through the TCP connection.</p>
+<p>The "result" value is the IP address of the Spark Device on your local network and the part after the colon (:) is the port that the server is currently listening on. This port will by default be 48879 (0xBEEF), but can be changed in the voodoospark firmware. Please do not hardcode the port for this reason, rather use the data returned back as the response.</p>
+<p>With the IP Address and TCP port information, use your favorite language or TCP client to connect to the device (even telnet will work) and send it the necessary BINARY protocol commands to trigger the desired API interactions as defined in our <a href="http://voodootikigod.github.io/voodoospark/api.html">API Command guide</a>.</p>
 
 <h2>Reference Implementations</h2>
 <ul>
