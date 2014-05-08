@@ -38,7 +38,7 @@ This should return a JSON document that looks similar to this:
       }
     }
 
-The result value is the IP address of the Spark Device on your local network and the part after the color (:) is the port that the server is currently listening on. This port will by default be 48879 (0xBEEF), but can be changed in the voodoospark firmware. Please do not hardcode the port for this reason, rather use the data returned back as the response.
+The "result" value is the IP address of the Spark Device on your local network and the part after the colon (:) is the port that the server is currently listening on. This port will by default be 48879 (0xBEEF), but can be changed in the voodoospark firmware. Please do not hardcode the port for this reason, rather use the data returned back as the response.
 
 With the IP Address and TCP port information, use your favorite language or TCP client to connect to the device (even telnet will work) and send it the necessary BINARY protocol commands to trigger the desired API interactions as defined in our [API Command guide](http://voodootikigod.github.io/voodoospark/api.html).
 
