@@ -32,14 +32,14 @@
   ******************************************************************************
   */
 
-static const bool DEBUG = 1;
+static const bool DEBUG = 0;
 
 static const int PORT = 48879; // 0xbeef
 
 // TCPClient client;
 TCPServer server = TCPServer(PORT);
 TCPClient client;
-
+byte readBuffer[255];
 byte reading[20];
 byte previous[20];
 Servo servos[20];
@@ -92,32 +92,38 @@ char myIpString[32];
 
 void setup() {
   server.begin();
-  if (DEBUG)
+  netapp_ipconfig(&ip_config);
+  if (DEBUG) {
     Serial.begin(115200);
-
+  }
   IPAddress myIp = Network.localIP();
   sprintf(myIpString, "%d.%d.%d.%d:%d", myIp[0], myIp[1], myIp[2], myIp[3], PORT);
   Spark.variable("endpoint", myIpString, STRING);
 
 }
 
+bool hasRead = false;
+
 void loop() {
-
-
   if (client.connected()) {
-    report();
-    while (client.available()) {
-      // parse and execute commands
+    // report();
+    int length = client.available();
+    if (length) {
+      int idx = 0;
+      client.read(readBuffer, length);
+    //   // parse and execute commands
 
-      int action = client.read();
-      if (DEBUG)
+      int action = readBuffer[idx++];
+      if (DEBUG) {
         Serial.println("Action received: " + ('0' + action));
+      }
+
 
       int pin, mode, val, type, speed, address, stop, len, i;
       switch (action) {
         case 0x00:  // pinMode
-          pin = client.read();
-          mode = client.read();
+          pin = readBuffer[idx++];
+          mode = readBuffer[idx++];
           // mode is modeled after Standard Firmata
           if (mode == 0x00) {
             pinMode(pin, INPUT);
@@ -130,39 +136,39 @@ void loop() {
           }
           break;
         case 0x01:  // digitalWrite
-          pin = client.read();
-          val = client.read();
+          pin = readBuffer[idx++];
+          val = readBuffer[idx++];
           digitalWrite(pin, val);
           break;
         case 0x02:  // analogWrite
-          pin = client.read();
-          val = client.read();
+          pin = readBuffer[idx++];
+          val = readBuffer[idx++];
           analogWrite(pin, val);
           break;
         case 0x03:  // digitalRead
-          pin = client.read();
+          pin = readBuffer[idx++];
           val = digitalRead(pin);
           server.write(0x03);
           server.write(pin);
           server.write(val);
           break;
         case 0x04:  // analogRead
-          pin = client.read();
+          pin = readBuffer[idx++];
           val = analogRead(pin);
           server.write(0x04);
           server.write(pin);
           server.write(val);
           break;
         case 0x05: // set always send bit
-          pin = client.read();
-          val = client.read();
+          pin = readBuffer[idx++];
+          val = readBuffer[idx++];
           reading[pin] = val;
           break;
 
         // Serial API
         case 0x10:  // serial.begin
-           type = client.read();
-           speed = client.read();
+           type = readBuffer[idx++];
+           speed = readBuffer[idx++];
           if (type == 0) {
             Serial.begin(SerialSpeed[speed]);
           } else {
@@ -170,7 +176,7 @@ void loop() {
           }
           break;
         case 0x11:  // serial.end
-          type = client.read();
+          type = readBuffer[idx++];
           if (type == 0) {
             Serial.end();
           } else {
@@ -178,7 +184,7 @@ void loop() {
           }
           break;
         case 0x12:  // serial.peek
-          type = client.read();
+          type = readBuffer[idx++];
           if (type == 0) {
             val = Serial.peek();
           } else {
@@ -189,7 +195,7 @@ void loop() {
           server.write(val);
           break;
         case 0x13:  // serial.available()
-          type = client.read();
+          type = readBuffer[idx++];
           if (type == 0) {
             val = Serial.available();
           } else {
@@ -200,18 +206,18 @@ void loop() {
           server.write(val);
           break;
         case 0x14:  // serial.write
-          type = client.read();
-          len = client.read();
+          type = readBuffer[idx++];
+          len = readBuffer[idx++];
           for (i = 0; i < len; i++) {
             if (type ==0) {
-              Serial.write(client.read());
+              Serial.write(readBuffer[idx++]);
             } else {
-              Serial1.write(client.read());
+              Serial1.write(readBuffer[idx++]);
             }
           }
           break;
         case 0x15: // serial.read
-          type = client.read();
+          type = readBuffer[idx++];
           if (type == 0) {
             val = Serial.read();
           } else {
@@ -222,7 +228,7 @@ void loop() {
           server.write(val);
           break;
         case 0x16: // serial.flush
-          type = client.read();
+          type = readBuffer[idx++];
           if (type == 0) {
             Serial.flush();
           } else {
@@ -239,11 +245,11 @@ void loop() {
           SPI.end();
           break;
         case 0x22:  // SPI.setBitOrder
-          type = client.read();
+          type = readBuffer[idx++];
           SPI.setBitOrder((type ? MSBFIRST : LSBFIRST));
           break;
         case 0x23:  // SPI.setClockDivider
-          val = client.read();
+          val = readBuffer[idx++];
           if (val == 0) {
             SPI.setClockDivider(SPI_CLOCK_DIV2);
           } else if (val == 1) {
@@ -264,7 +270,7 @@ void loop() {
           break;
 
         case 0x24:  // SPI.setDataMode
-          val = client.read();
+          val = readBuffer[idx++];
           if (val == 0) {
             SPI.setDataMode(SPI_MODE0);
           } else if (val == 1) {
@@ -277,7 +283,7 @@ void loop() {
           break;
 
         case 0x25:  // SPI.transfer
-          val = client.read();
+          val = readBuffer[idx++];
           val = SPI.transfer(val);
           server.write(0x24);
           server.write(val);
@@ -286,7 +292,7 @@ void loop() {
 
         // Wire API
         case 0x30:  // Wire.begin
-          address = client.read();
+          address = readBuffer[idx++];
           if (address == 0) {
             Wire.begin();
           } else {
@@ -294,26 +300,26 @@ void loop() {
           }
           break;
         case 0x31:  // Wire.requestFrom
-          address = client.read();
-          val = client.read();
-          stop = client.read();
+          address = readBuffer[idx++];
+          val = readBuffer[idx++];
+          stop = readBuffer[idx++];
           Wire.requestFrom(address, val, stop);
           break;
         case 0x32:  // Wire.beginTransmission
-          address = client.read();
+          address = readBuffer[idx++];
           Wire.beginTransmission(address);
           break;
         case 0x33:  // Wire.endTransmission
-          stop = client.read();
+          stop = readBuffer[idx++];
           val = Wire.endTransmission(stop);
           server.write(0x33);
           server.write(val);
           break;
         case 0x34:  // Wire.write
-          len = client.read();
+          len = readBuffer[idx++];
           uint8_t wireData[len];
           for (i = 0; i< len; i++) {
-            wireData[i] = client.read();
+            wireData[i] = readBuffer[idx++];
           }
           val = Wire.write(wireData, len);
           server.write(0x34);
@@ -332,35 +338,35 @@ void loop() {
 
 
         case 0x40:
-          pin = client.read();
+          pin = readBuffer[idx++];
           servos[pin].attach(pin);
           break;
         case 0x41:
-          pin = client.read();
-          val = client.read();
+          pin = readBuffer[idx++];
+          val = readBuffer[idx++];
           servos[pin].write(val);
           break;
         case 0x42:
-          pin = client.read();
-          val = client.read();
+          pin = readBuffer[idx++];
+          val = readBuffer[idx++];
           servos[pin].writeMicroseconds(val);
           break;
         case 0x43:
-          pin = client.read();
+          pin = readBuffer[idx++];
           val = servos[pin].read();
           server.write(0x43);
           server.write(pin);
           server.write(val);
           break;
         case 0x44:
-          pin = client.read();
+          pin = readBuffer[idx++];
           val = servos[pin].attached();
           server.write(0x44);
           server.write(pin);
           server.write(val);
           break;
         case 0x45:
-          pin = client.read();
+          pin = readBuffer[idx++];
           servos[pin].detach();
           break;
 
@@ -369,6 +375,9 @@ void loop() {
           break;
 
       } // <-- This is the end of the switch
-    }
+    } // <-- This is the end of the length check
+  } else {
+    // if no client is yet connected, check for a new connection
+    client = server.available();
   }
 }
