@@ -226,19 +226,19 @@ uint8_t msgMinLength[] = {
    1,    // msg_servoDetach
 };
 
-bool hasRead = false;
 
 // these are outside loop() so they'll retain their values
 //    between calls to loop()
 int length = 0;
 int idx;
+int action;
+int a;
 
 void loop() {
-  int action;
   if (client.connected()) {
     // report();
 
-    int a = client.available();
+    a = client.available();
     if (a > 0) {
 
       // length == current buffer length
