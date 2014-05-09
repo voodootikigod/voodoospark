@@ -4,7 +4,7 @@
   * @author  Chris Williams
   * @version V2.0.0
   * @date    07-May-2014
-  * @brief   Exposes the firmware level API through a TCP Connection intiated
+  * @brief   Exposes the firmware level API through a TCP Connection initiated
   *          to the spark device
   ******************************************************************************
   Copyright (c) 2014 Chris Williams  All rights reserved.
@@ -568,7 +568,7 @@ void loop() {
                   break;
 
                } // <-- This is the end of the switch
-            } // <-- This is the end of if (idx+msgMinLenght[] < length)
+            } // <-- This is the end of if (idx+msgMinLength[] < length)
             else
             {
                // fix up an incomplete message, putting it at the front of
