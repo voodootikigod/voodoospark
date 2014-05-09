@@ -32,26 +32,21 @@
   ******************************************************************************
   */
 
-static const bool DEBUG = 0;
+#define DEBUG 0
 
-static const int PORT = 48879; // 0xbeef
+ // Port = 0xbeef
+#define PORT 48879
 
 // TCPClient client;
 TCPServer server = TCPServer(PORT);
 TCPClient client;
-byte readBuffer[512];
+byte readBuffer[128];
 byte reading[20];
 byte previous[20];
 Servo servos[20];
 
 long SerialSpeed[] = { 600, 1200, 2400, 4800, 9600, 14400, 19200, 28800, 38400, 57600, 115200 };
 
-void reset() {
-  for (int i = 0; i < 20; i++) {
-    reading[i] = 0;
-    previous[i] = 0;
-  }
-}
 
 void send(int action, int pin, int value) {
   if (previous[pin] != value) {
@@ -83,15 +78,23 @@ void report() {
   }
 }
 
-char myIpString[32];
+char myIpString[24];
 
 
 void setup() {
+
+  for (int i = 0; i < 20; i++) {
+    reading[i] = 0;
+    previous[i] = 0;
+  }
+
   server.begin();
   netapp_ipconfig(&ip_config);
-  if (DEBUG) {
-    Serial.begin(115200);
-  }
+
+  #ifdef DEBUG
+  Serial.begin(115200);
+  #endif
+
   IPAddress myIp = Network.localIP();
   sprintf(myIpString, "%d.%d.%d.%d:%d", myIp[0], myIp[1], myIp[2], myIp[3], PORT);
   Spark.variable("endpoint", myIpString, STRING);
@@ -230,9 +233,7 @@ uint8_t msgMinLength[] = {
 // these are outside loop() so they'll retain their values
 //    between calls to loop()
 int length = 0;
-int idx;
-int action;
-int a;
+int idx,action,a;
 
 void loop() {
   if (client.connected()) {
@@ -262,9 +263,9 @@ void loop() {
       while (idx < length)
       {
          action = readBuffer[idx++];
-         if (DEBUG) {
-            Serial.println("Action received: " + ('0' + action));
-         }
+          #ifdef DEBUG
+          Serial.println("Action received: " + ('0' + action));
+          #endif
 
          // is the action valid?
          if (action < msg_count)
