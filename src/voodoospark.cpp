@@ -92,7 +92,7 @@ char myIpString[32];
 
 void setup() {
   server.begin();
-  //netapp_ipconfig(&ip_config);
+  netapp_ipconfig(&ip_config);
   if (DEBUG) {
     Serial.begin(115200);
   }
