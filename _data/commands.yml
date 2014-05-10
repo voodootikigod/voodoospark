@@ -1,5 +1,5 @@
 - direction: To Spark
-  command: 0x00
+  command: "0x00"
   id: pinmode
   api_target: Pin Mode
   api_target_url: http://docs.spark.io/#/firmware/setup-pinmode
@@ -14,7 +14,7 @@
   return: None
 
 - direction: To Spark
-  command: 0x01
+  command: "0x01"
   id: digitalwrite
   api_target: Digital Write
   api_target_url: http://docs.spark.io/#/firmware/i-o-digitalwrite
@@ -25,7 +25,7 @@
   return: None
 
 - direction: To Spark
-  command: 0x02
+  command: "0x02"
   id: analogwrite
   api_target: Analog Write
   api_target_url: http://docs.spark.io/#/firmware/i-o-analogwrite
@@ -36,7 +36,7 @@
   return: None
 
 - direction: To Spark
-  command: 0x03
+  command: "0x03"
   id: digitalread
   api_target: Digital Read
   api_target_url: http://docs.spark.io/#/firmware/i-o-digitalread
@@ -45,7 +45,7 @@
   return: 3 bytes which have 0x03 as the first byte, the pin as the second, and the value as the third.
 
 - direction: To Spark
-  command: 0x04
+  command: "0x04"
   id: analogwrite
   api_target: Analog Read
   api_target_url: http://docs.spark.io/#/firmware/i-o-analogread
@@ -54,7 +54,7 @@
   return: 3 bytes which have 0x03 as the first byte, the pin as the second, and the value as the third.
 
 - direction: To Spark
-  command: 0x05
+  command: "0x05"
   id: alwayssend
   api_target: Always Send Bit
   api_target_url: #
@@ -65,7 +65,7 @@
   return: None
 
 - direction: To Spark
-  command: 0x10
+  command: "0x10"
   id: serialbegin
   api_target: Serial.begin
   api_target_url: http://docs.spark.io/#/firmware/serial-begin
@@ -76,7 +76,7 @@
   return: None
 
 - direction: To Spark
-  command: 0x11
+  command: "0x11"
   id: serialend
   api_target: Serial.end
   api_target_url: http://docs.spark.io/#/firmware/serial-end
@@ -85,7 +85,7 @@
   return: None
 
 - direction: To Spark
-  command: 0x12
+  command: "0x12"
   id: serialpeek
   api_target: Serial.peek
   api_target_url: http://docs.spark.io/#/firmware/serial-peek
@@ -94,7 +94,7 @@
   return: 3 bytes which have 0x12 as the first byte, the type as the second, and the return value as the third.
 
 - direction: To Spark
-  command: 0x13
+  command: "0x13"
   id: serialavailable
   api_target: Serial.available
   api_target_url: http://docs.spark.io/#/firmware/serial-available
@@ -103,7 +103,7 @@
   return: 3 bytes which have 0x13 as the first byte, the type as the second, and the return value as the third.
 
 - direction: To Spark
-  command: 0x14
+  command: "0x14"
   id: serialwrite
   api_target: Serial.write
   api_target_url: http://docs.spark.io/#/firmware/serial-write
@@ -116,7 +116,7 @@
   return: None
 
 - direction: To Spark
-  command: 0x15
+  command: "0x15"
   id: serialread
   api_target: Serial.read
   api_target_url: http://docs.spark.io/#/firmware/serial-read
@@ -139,7 +139,7 @@
 
 
 - direction: To Spark
-  command: 0x16
+  command: "0x16"
   id: serialflush
   api_target: Serial.flush
   api_target_url: http://docs.spark.io/#/firmware/serial-flush
