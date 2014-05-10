@@ -43,7 +43,7 @@ TCPClient client;
 byte readBuffer[128];
 byte reading[20];
 byte previous[20];
-Servo servos[20];
+Servo servos[8];
 
 long SerialSpeed[] = { 600, 1200, 2400, 4800, 9600, 14400, 19200, 28800, 38400, 57600, 115200 };
 
@@ -237,7 +237,7 @@ int idx,action,a;
 
 void loop() {
   if (client.connected()) {
-    // report();
+    report();
 
     a = client.available();
     if (a > 0) {
