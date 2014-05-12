@@ -264,7 +264,8 @@ void loop() {
       {
          action = readBuffer[idx++];
           #ifdef DEBUG
-          Serial.println("Action received: " + ('0' + action));
+          Serial.print("Action received: ");
+          Serial.println(action, HEX);
           #endif
 
          // is the action valid?
