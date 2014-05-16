@@ -289,16 +289,19 @@ void loop() {
                   pinMode(pin, OUTPUT);
                 }
                 break;
+
               case msg_digitalWrite:  // digitalWrite
                 pin = readBuffer[idx++];
                 val = readBuffer[idx++];
                 digitalWrite(pin, val);
                 break;
+
               case msg_analogWrite:  // analogWrite
                 pin = readBuffer[idx++];
                 val = readBuffer[idx++];
                 analogWrite(pin, val);
                 break;
+
               case msg_digitalRead:  // digitalRead
                 pin = readBuffer[idx++];
                 val = digitalRead(pin);
@@ -306,6 +309,7 @@ void loop() {
                 server.write(pin);
                 server.write(val);
                 break;
+
               case msg_analogRead:  // analogRead
                 pin = readBuffer[idx++];
                 val = analogRead(pin);
@@ -313,6 +317,7 @@ void loop() {
                 server.write(pin);
                 server.write(val);
                 break;
+
               case msg_setAlwaysSendBit: // set always send bit
                 pin = readBuffer[idx++];
                 val = readBuffer[idx++];
@@ -329,6 +334,7 @@ void loop() {
                   Serial1.begin(SerialSpeed[speed]);
                 }
                 break;
+
               case msg_serialEnd:  // serial.end
                 type = readBuffer[idx++];
                 if (type == 0) {
@@ -337,6 +343,7 @@ void loop() {
                   Serial1.end();
                 }
                 break;
+
               case msg_serialPeek:  // serial.peek
                 type = readBuffer[idx++];
                 if (type == 0) {
@@ -348,6 +355,7 @@ void loop() {
                 server.write(type);
                 server.write(val);
                 break;
+
               case msg_serialAvailable:  // serial.available()
                 type = readBuffer[idx++];
                 if (type == 0) {
@@ -359,6 +367,7 @@ void loop() {
                 server.write(type);
                 server.write(val);
                 break;
+
               case msg_serialWrite:  // serial.write
                 type = readBuffer[idx++];
                 len = readBuffer[idx++];
@@ -384,6 +393,7 @@ void loop() {
                   return;
                 }
                 break;
+
               case msg_serialRead: // serial.read
                 type = readBuffer[idx++];
                 if (type == 0) {
@@ -395,6 +405,7 @@ void loop() {
                 server.write(type);
                 server.write(val);
                 break;
+
               case msg_serialFlush: // serial.flush
                 type = readBuffer[idx++];
                 if (type == 0) {
@@ -404,18 +415,20 @@ void loop() {
                 }
                 break;
 
-
               // SPI API
               case msg_spiBegin:  // SPI.begin
                 SPI.begin();
                 break;
+
               case msg_spiEnd:  // SPI.end
                 SPI.end();
                 break;
+
               case msg_spiSetBitOrder:  // SPI.setBitOrder
                 type = readBuffer[idx++];
                 SPI.setBitOrder((type ? MSBFIRST : LSBFIRST));
                 break;
+
               case msg_spiSetClockDivider:  // SPI.setClockDivider
                 val = readBuffer[idx++];
                 if (val == 0) {
@@ -457,7 +470,6 @@ void loop() {
                 server.write(val);
                 break;
 
-
               // Wire API
               case msg_wireBegin:  // Wire.begin
                 address = readBuffer[idx++];
@@ -467,22 +479,26 @@ void loop() {
                   Wire.begin(address);
                 }
                 break;
+
               case msg_wireRequestFrom:  // Wire.requestFrom
                 address = readBuffer[idx++];
                 val = readBuffer[idx++];
                 stop = readBuffer[idx++];
                 Wire.requestFrom(address, val, stop);
                 break;
+
               case msg_wireBeginTransmission:  // Wire.beginTransmission
                 address = readBuffer[idx++];
                 Wire.beginTransmission(address);
                 break;
+
               case msg_wireEndTransmission:  // Wire.endTransmission
                 stop = readBuffer[idx++];
                 val = Wire.endTransmission(stop);
                 server.write(0x33);    // could be (action)
                 server.write(val);
                 break;
+
               case msg_wireWrite:  // Wire.write
                 len = readBuffer[idx++];
                 // uint8_t wireData[len];
@@ -511,11 +527,13 @@ void loop() {
                   return;
                 }
                 break;
+
               case msg_wireAvailable:  // Wire.available
                 val = Wire.available();
                 server.write(0x35);    // could be (action)
                 server.write(val);
                 break;
+
               case msg_wireRead:  // Wire.read
                 val = Wire.read();
                 server.write(0x36);    // could be (action)
@@ -527,16 +545,19 @@ void loop() {
                 pin = readBuffer[idx++];
                 servos[pin].attach(pin);
                 break;
+
               case msg_servoWrite:
                 pin = readBuffer[idx++];
                 val = readBuffer[idx++];
                 servos[pin].write(val);
                 break;
+
               case msg_servoWriteMicroseconds:
                 pin = readBuffer[idx++];
                 val = readBuffer[idx++];
                 servos[pin].writeMicroseconds(val);
                 break;
+
               case msg_servoRead:
                 pin = readBuffer[idx++];
                 val = servos[pin].read();
@@ -544,6 +565,7 @@ void loop() {
                 server.write(pin);
                 server.write(val);
                 break;
+
               case msg_servoAttached:
                 pin = readBuffer[idx++];
                 val = servos[pin].attached();
@@ -551,6 +573,7 @@ void loop() {
                 server.write(pin);
                 server.write(val);
                 break;
+
               case msg_servoDetach:
                 pin = readBuffer[idx++];
                 servos[pin].detach();
@@ -558,6 +581,7 @@ void loop() {
 
               default: // noop
                 break;
+
             } // <-- This is the end of the switch
           } // <-- This is the end of if (idx+msgMinLength[] < length)
           else {
