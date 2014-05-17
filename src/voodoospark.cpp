@@ -32,7 +32,7 @@
   ******************************************************************************
   */
 
-#define DEBUG 0
+#define DEBUG 1
 
 // Port = 0xbeef
 #define PORT 48879
@@ -242,6 +242,11 @@ void loop() {
     a = client.available();
     if (a > 0) {
 
+      #ifdef DEBUG
+      Serial.print("Bytes Available: ");
+      Serial.println(a, HEX);
+      #endif
+
       // length == current buffer length
       // a == # bytes available
       // if the sum exceeds the size of the buffer, decrease the
@@ -249,8 +254,14 @@ void loop() {
       if (length + a > (int) sizeof readBuffer)
         a = sizeof readBuffer - length;
 
+
+
+      #ifdef DEBUG
+      Serial.print("Bytes Available: ");
+      Serial.println(a, HEX);
+      #endif
       // read into the buffer at offset length
-      client.read(readBuffer + length, a);
+      client.read(readBuffer,a);
 
       // increase length by # of extra bytes read
       length += a;
@@ -260,24 +271,47 @@ void loop() {
 
       // parse and execute commands
 
+
+      #ifdef DEBUG
+      Serial.print("Bytes Available: ");
+      Serial.println(a, HEX);
+      #endif
+
+
       while (idx < length) {
+        #ifdef DEBUG
+        Serial.print("idx :length");
+        Serial.print(idx, HEX);
+        Serial.println(length, HEX);
+        #endif
+
         action = readBuffer[idx++];
         #ifdef DEBUG
-        Serial.println("Action received: " + ('0' + action));
+        Serial.print("Action received: ");
+        Serial.println(action, HEX);
         #endif
 
         // is the action valid?
-        if (action < msg_count) {
+        if (action <= msg_count) {
+
+
           // is there enough data left in the buffer to
           //    process this action?
           // if not, stop and fix
-          if (idx + msgMinLength[action] < length) {
+          if (idx + msgMinLength[action] <= length) {
+
 
             int pin, mode, val, type, speed, address, stop, len, i;
             switch (action) {
               case msg_pinMode:  // pinMode
                 pin = readBuffer[idx++];
                 mode = readBuffer[idx++];
+                #ifdef DEBUG
+                Serial.print("PIN received: ");
+                Serial.println(pin, HEX);
+                Serial.print("MODE received: ");
+                Serial.println(mode, HEX);
+                #endif
                 // mode is modeled after Standard Firmata
                 if (mode == 0x00) {
                   pinMode(pin, INPUT);
@@ -293,18 +327,36 @@ void loop() {
               case msg_digitalWrite:  // digitalWrite
                 pin = readBuffer[idx++];
                 val = readBuffer[idx++];
+                #ifdef DEBUG
+                Serial.print("PIN received: ");
+                Serial.println(pin, HEX);
+                Serial.print("VALUE received: ");
+                Serial.println(val, HEX);
+                #endif
                 digitalWrite(pin, val);
                 break;
 
               case msg_analogWrite:  // analogWrite
                 pin = readBuffer[idx++];
                 val = readBuffer[idx++];
+                #ifdef DEBUG
+                Serial.print("PIN received: ");
+                Serial.println(pin, HEX);
+                Serial.print("VALUE received: ");
+                Serial.println(val, HEX);
+                #endif
                 analogWrite(pin, val);
                 break;
 
               case msg_digitalRead:  // digitalRead
                 pin = readBuffer[idx++];
                 val = digitalRead(pin);
+                #ifdef DEBUG
+                Serial.print("PIN received: ");
+                Serial.println(pin, HEX);
+                Serial.print("VALUE sent: ");
+                Serial.println(val, HEX);
+                #endif
                 server.write(0x03);    // could be (action)
                 server.write(pin);
                 server.write(val);
@@ -313,6 +365,12 @@ void loop() {
               case msg_analogRead:  // analogRead
                 pin = readBuffer[idx++];
                 val = analogRead(pin);
+                #ifdef DEBUG
+                Serial.print("PIN received: ");
+                Serial.println(pin, HEX);
+                Serial.print("VALUE sent: ");
+                Serial.println(val, HEX);
+                #endif
                 server.write(0x04);    // could be (action)
                 server.write(pin);
                 server.write(val);
@@ -613,6 +671,8 @@ void loop() {
         readBuffer[0] = action;
         memcpy (readBuffer + 1, readBuffer + idx, length - idx);
         idx = length - idx + 1;
+      } else {
+          length = 0;
       }
 
     } // <-- This is the end of the length check
