@@ -1,6 +1,6 @@
 ## What is VoodooSpark?
 
-__Version: 2.0.3  Released: May 16, 2014__
+__Version: 2.0.4  Released: May 16, 2014__
 
 VoodooSpark is a customized firmware build for the [Spark Core device](https://www.spark.io) to allow a remote interface definition of the firmware API over a local TCP connection. The intent is to allow client-side programs to directly control the Spark Core in real-time regardless of their programming language. The interface exposed is directly mapped to the one provided by Spark available in their [docs section](https://docs.spark.io/).
 
