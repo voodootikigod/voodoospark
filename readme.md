@@ -44,6 +44,29 @@ The "result" value is the IP address of the Spark Device on your local network a
 
 With the IP Address and TCP port information, use your favorite language or TCP client to connect to the device (even telnet will work) and send it the necessary BINARY protocol commands to trigger the desired API interactions as defined in our [API Command guide](http://voodoospark.me/#api).
 
+
+## How to Debug
+
+In case you want to see what is going inside the VoodooSpark in real-time, we have built in a lot of debug hooks for you. You will need a USB cable and the `screen` or `minicom` utilities (one of them) on unix. Modify the firmware loaded in the spark build system to convert the line:
+
+    #define DEBUG 0
+
+to the following definition:
+
+    #define DEBUG 1
+
+This will enable debug mode, boot a serial port connection on the Spark and present on your computer for you to watch the inside voodoo. Be sure to flash the new firmware to your device, this is very important and easy to miss. Once the flashing finishes, do an
+
+    ls /dev
+
+Look for something similar to `tty.usbmodem1411` yours may be different, but will be something like tty.usbmodemABCD. Now using your favorite term app connect to that port using the baud rate of 115200.
+
+For screen this command will look like:
+
+    screen /dev/tty.usbmodem1411 115200
+
+
+
 ## Reference Implementations
 
 *   [Spark-io _node.js_](http://github.com/rwaldron/spark-io)
