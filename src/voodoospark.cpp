@@ -447,7 +447,7 @@ void loop() {
                   readBuffer[1] = type;
                   readBuffer[2] = len;
                   memcpy (readBuffer + 3, readBuffer + idx, length - idx);
-                  idx = length - idx + 3;
+                  length = 0;
                   return;
                 }
                 break;
@@ -581,7 +581,7 @@ void loop() {
                   readBuffer[0] = action;
                   readBuffer[1] = len;
                   memcpy (readBuffer + 2, readBuffer + idx, length - idx);
-                  idx = length - idx + 2;
+                  length = 0;
                   return;
                 }
                 break;
@@ -650,7 +650,7 @@ void loop() {
             // then bail.
             readBuffer[0] = action;
             memcpy (readBuffer + 1, readBuffer + idx, length - idx);
-            idx = length - idx + 1;
+            length = 0;
             return;
           }
         } // <-- This is the end of the valid action check
@@ -670,9 +670,7 @@ void loop() {
         //    remaining bytes get copied.
         readBuffer[0] = action;
         memcpy (readBuffer + 1, readBuffer + idx, length - idx);
-        idx = length - idx + 1;
-      } else {
-          length = 0;
+        length = 0;
       }
 
     } // <-- This is the end of the length check
