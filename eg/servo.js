@@ -22,25 +22,15 @@ board.on("ready", function() {
 
 
 function forward() {
-    board.analogWrite("D1", 80);
-    board.analogWrite("D0", 250);
-}
-function backward() {
     board.analogWrite("D1", 250);
     board.analogWrite("D0", 80);
+}
+function backward() {
+    board.analogWrite("D1", 80);
+    board.analogWrite("D0", 250);
 }
 
 function stop() {
     board.analogWrite("D1", 0);
     board.analogWrite("D0", 0);
   }
-
-
-  var i = 0;
-
-  var i = setInterval(function () {
-    i = (i+1)%255;
-    console.log(i);
-    board.analogWrite("D0", i);
-
-  }, )

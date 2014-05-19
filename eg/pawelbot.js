@@ -1,4 +1,4 @@
-var five = require("../../johnny-five");
+var five = require("johnny-five");
 var Spark = require("../../spark-io");
 var keypress = require('keypress');
 

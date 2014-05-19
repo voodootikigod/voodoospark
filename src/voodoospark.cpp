@@ -2,7 +2,7 @@
   ******************************************************************************
   * @file    voodoospark.cpp
   * @author  Chris Williams
-  * @version V2.0.5
+  * @version V2.0.6
   * @date    07-May-2014
   * @brief   Exposes the firmware level API through a TCP Connection initiated
   *          to the spark device
@@ -40,7 +40,6 @@
 // TCPClient client;
 TCPServer server = TCPServer(PORT);
 TCPClient client;
-byte readBuffer[128];
 byte reading[20];
 byte previous[20];
 Servo servos[8];
@@ -239,436 +238,346 @@ void loop() {
   if (client.connected()) {
     report();
 
+
+
     a = client.available();
     if (a > 0) {
 
       #ifdef DEBUG
-      Serial.print("Raw a value: ");
+      Serial.print("Bytes Available: ");
       Serial.println(a, HEX);
       #endif
 
-      // length == current buffer length
-      // a == # bytes available
-      // if the sum exceeds the size of the buffer, decrease the
-      //    # of bytes to read by length
-      if (length + a > (int) sizeof readBuffer)
-        a = sizeof readBuffer - length;
-
-
+      action = client.read();
 
       #ifdef DEBUG
-      Serial.print("Final a value: ");
-      Serial.println(a, HEX);
+      Serial.print("Action received: ");
+      Serial.println(action, HEX);
       #endif
-      // read into the buffer at offset length
-      client.read(readBuffer,a);
 
-      // increase length by # of extra bytes read
-      length += a;
-
-      // start at beginning of buffer.  should be an action.
-      idx = 0;
-
-      // parse and execute commands
-      while (idx < length) {
-        #ifdef DEBUG
-        Serial.print("idx: ");
-        Serial.println(idx, HEX);
-
-        Serial.print("length: ");
-        Serial.println(length, HEX);
-        #endif
-
-        action = readBuffer[idx++];
-        #ifdef DEBUG
-        Serial.print("Action received: ");
-        Serial.println(action, HEX);
-        #endif
-
-        // is the action valid?
-        if (action <= msg_count) {
+      // is the action valid?
+      if (action <= msg_count) {
 
 
-          // is there enough data left in the buffer to
-          //    process this action?
-          // if not, stop and fix
-          if (idx + msgMinLength[action] <= length) {
+        // is there enough data left in the buffer to
+        //    process this action?
+        // if not, stop and fix
+        if (msgMinLength[action] <= a) {
 
 
-            int pin, mode, val, type, speed, address, stop, len, i;
-            switch (action) {
-              case msg_pinMode:  // pinMode
-                pin = readBuffer[idx++];
-                mode = readBuffer[idx++];
-                #ifdef DEBUG
-                Serial.print("PIN received: ");
-                Serial.println(pin, HEX);
-                Serial.print("MODE received: ");
-                Serial.println(mode, HEX);
-                #endif
-                // mode is modeled after Standard Firmata
-                if (mode == 0x00) {
-                  pinMode(pin, INPUT);
-                } else if (mode == 0x02) {
-                  pinMode(pin, INPUT_PULLUP);
-                } else if (mode == 0x03) {
-                  pinMode(pin, INPUT_PULLDOWN);
-                } else if (mode == 0x01) {
-                  pinMode(pin, OUTPUT);
-                }
-                break;
+          int pin, mode, val, type, speed, address, stop, len, i;
+          switch (action) {
+            case msg_pinMode:  // pinMode
+              pin = client.read();
+              mode = client.read();
+              #ifdef DEBUG
+              Serial.print("PIN received: ");
+              Serial.println(pin, HEX);
+              Serial.print("MODE received: ");
+              Serial.println(mode, HEX);
+              #endif
+              // mode is modeled after Standard Firmata
+              if (mode == 0x00) {
+                pinMode(pin, INPUT);
+              } else if (mode == 0x02) {
+                pinMode(pin, INPUT_PULLUP);
+              } else if (mode == 0x03) {
+                pinMode(pin, INPUT_PULLDOWN);
+              } else if (mode == 0x01) {
+                pinMode(pin, OUTPUT);
+              }
+              break;
 
-              case msg_digitalWrite:  // digitalWrite
-                pin = readBuffer[idx++];
-                val = readBuffer[idx++];
-                #ifdef DEBUG
-                Serial.print("PIN received: ");
-                Serial.println(pin, HEX);
-                Serial.print("VALUE received: ");
-                Serial.println(val, HEX);
-                #endif
-                digitalWrite(pin, val);
-                break;
+            case msg_digitalWrite:  // digitalWrite
+              pin = client.read();
+              val = client.read();
+              #ifdef DEBUG
+              Serial.print("PIN received: ");
+              Serial.println(pin, HEX);
+              Serial.print("VALUE received: ");
+              Serial.println(val, HEX);
+              #endif
+              digitalWrite(pin, val);
+              break;
 
-              case msg_analogWrite:  // analogWrite
-                pin = readBuffer[idx++];
-                val = readBuffer[idx++];
-                #ifdef DEBUG
-                Serial.print("PIN received: ");
-                Serial.println(pin, HEX);
-                Serial.print("VALUE received: ");
-                Serial.println(val, HEX);
-                #endif
-                analogWrite(pin, val);
-                break;
+            case msg_analogWrite:  // analogWrite
+              pin = client.read();
+              val = client.read();
+              #ifdef DEBUG
+              Serial.print("PIN received: ");
+              Serial.println(pin, HEX);
+              Serial.print("VALUE received: ");
+              Serial.println(val, HEX);
+              #endif
+              analogWrite(pin, val);
+              break;
 
-              case msg_digitalRead:  // digitalRead
-                pin = readBuffer[idx++];
-                val = digitalRead(pin);
-                #ifdef DEBUG
-                Serial.print("PIN received: ");
-                Serial.println(pin, HEX);
-                Serial.print("VALUE sent: ");
-                Serial.println(val, HEX);
-                #endif
-                server.write(0x03);    // could be (action)
-                server.write(pin);
-                server.write(val);
-                break;
+            case msg_digitalRead:  // digitalRead
+              pin = client.read();
+              val = digitalRead(pin);
+              #ifdef DEBUG
+              Serial.print("PIN received: ");
+              Serial.println(pin, HEX);
+              Serial.print("VALUE sent: ");
+              Serial.println(val, HEX);
+              #endif
+              server.write(0x03);    // could be (action)
+              server.write(pin);
+              server.write(val);
+              break;
 
-              case msg_analogRead:  // analogRead
-                pin = readBuffer[idx++];
-                val = analogRead(pin);
-                #ifdef DEBUG
-                Serial.print("PIN received: ");
-                Serial.println(pin, HEX);
-                Serial.print("VALUE sent: ");
-                Serial.println(val, HEX);
-                #endif
-                server.write(0x04);    // could be (action)
-                server.write(pin);
-                server.write(val);
-                break;
+            case msg_analogRead:  // analogRead
+              pin = client.read();
+              val = analogRead(pin);
+              #ifdef DEBUG
+              Serial.print("PIN received: ");
+              Serial.println(pin, HEX);
+              Serial.print("VALUE sent: ");
+              Serial.println(val, HEX);
+              #endif
+              server.write(0x04);    // could be (action)
+              server.write(pin);
+              server.write(val);
+              break;
 
-              case msg_setAlwaysSendBit: // set always send bit
-                pin = readBuffer[idx++];
-                val = readBuffer[idx++];
-                reading[pin] = val;
-                break;
+            case msg_setAlwaysSendBit: // set always send bit
+              pin = client.read();
+              val = client.read();
+              reading[pin] = val;
+              break;
 
-              // Serial API
-              case msg_serialBegin:  // serial.begin
-                type = readBuffer[idx++];
-                speed = readBuffer[idx++];
+            // Serial API
+            case msg_serialBegin:  // serial.begin
+              type = client.read();
+              speed = client.read();
+              if (type == 0) {
+                Serial.begin(SerialSpeed[speed]);
+              } else {
+                Serial1.begin(SerialSpeed[speed]);
+              }
+              break;
+
+            case msg_serialEnd:  // serial.end
+              type = client.read();
+              if (type == 0) {
+                Serial.end();
+              } else {
+                Serial1.end();
+              }
+              break;
+
+            case msg_serialPeek:  // serial.peek
+              type = client.read();
+              if (type == 0) {
+                val = Serial.peek();
+              } else {
+                val = Serial1.peek();
+              }
+              server.write(0x07);
+              server.write(type);
+              server.write(val);
+              break;
+
+            case msg_serialAvailable:  // serial.available()
+              type = client.read();
+              if (type == 0) {
+                val = Serial.available();
+              } else {
+                val = Serial1.available();
+              }
+              server.write(0x07);
+              server.write(type);
+              server.write(val);
+              break;
+
+            case msg_serialWrite:  // serial.write
+              type = client.read();
+              len = client.read();
+
+              for (i = 0; i < len; i++) {
                 if (type == 0) {
-                  Serial.begin(SerialSpeed[speed]);
+                  Serial.write(client.read());
                 } else {
-                  Serial1.begin(SerialSpeed[speed]);
+                  Serial1.write(client.read());
                 }
-                break;
+              }
+              break;
 
-              case msg_serialEnd:  // serial.end
-                type = readBuffer[idx++];
-                if (type == 0) {
-                  Serial.end();
-                } else {
-                  Serial1.end();
-                }
-                break;
+            case msg_serialRead: // serial.read
+              type = client.read();
+              if (type == 0) {
+                val = Serial.read();
+              } else {
+                val = Serial1.read();
+              }
+              server.write(0x16);
+              server.write(type);
+              server.write(val);
+              break;
 
-              case msg_serialPeek:  // serial.peek
-                type = readBuffer[idx++];
-                if (type == 0) {
-                  val = Serial.peek();
-                } else {
-                  val = Serial1.peek();
-                }
-                server.write(0x07);
-                server.write(type);
-                server.write(val);
-                break;
+            case msg_serialFlush: // serial.flush
+              type = client.read();
+              if (type == 0) {
+                Serial.flush();
+              } else {
+                Serial1.flush();
+              }
+              break;
 
-              case msg_serialAvailable:  // serial.available()
-                type = readBuffer[idx++];
-                if (type == 0) {
-                  val = Serial.available();
-                } else {
-                  val = Serial1.available();
-                }
-                server.write(0x07);
-                server.write(type);
-                server.write(val);
-                break;
+            // SPI API
+            case msg_spiBegin:  // SPI.begin
+              SPI.begin();
+              break;
 
-              case msg_serialWrite:  // serial.write
-                type = readBuffer[idx++];
-                len = readBuffer[idx++];
+            case msg_spiEnd:  // SPI.end
+              SPI.end();
+              break;
 
-                if (idx + len < length) {
-                  for (i = 0; i < len; i++)
-                    if (type == 0) {
-                      Serial.write(readBuffer[idx++]);
-                    } else {
-                      Serial1.write(readBuffer[idx++]);
-                    }
-                } else {
-                  // fix up an incomplete message, putting it at the front
-                  //    of the buffer:
-                  // the first byte has to be the action value, then type
-                  //    then len, and then the remaining bytes get copied.
-                  // then bail.
-                  readBuffer[0] = action;
-                  readBuffer[1] = type;
-                  readBuffer[2] = len;
-                  memcpy (readBuffer + 3, readBuffer + idx, length - idx);
-                  length = 0;
-                  return;
-                }
-                break;
+            case msg_spiSetBitOrder:  // SPI.setBitOrder
+              type = client.read();
+              SPI.setBitOrder((type ? MSBFIRST : LSBFIRST));
+              break;
 
-              case msg_serialRead: // serial.read
-                type = readBuffer[idx++];
-                if (type == 0) {
-                  val = Serial.read();
-                } else {
-                  val = Serial1.read();
-                }
-                server.write(0x16);
-                server.write(type);
-                server.write(val);
-                break;
+            case msg_spiSetClockDivider:  // SPI.setClockDivider
+              val = client.read();
+              if (val == 0) {
+                SPI.setClockDivider(SPI_CLOCK_DIV2);
+              } else if (val == 1) {
+                SPI.setClockDivider(SPI_CLOCK_DIV4);
+              } else if (val == 2) {
+                SPI.setClockDivider(SPI_CLOCK_DIV8);
+              } else if (val == 3) {
+                SPI.setClockDivider(SPI_CLOCK_DIV16);
+              } else if (val == 4) {
+                SPI.setClockDivider(SPI_CLOCK_DIV32);
+              } else if (val == 5) {
+                SPI.setClockDivider(SPI_CLOCK_DIV64);
+              } else if (val == 6) {
+                SPI.setClockDivider(SPI_CLOCK_DIV128);
+              } else if (val == 7) {
+                SPI.setClockDivider(SPI_CLOCK_DIV256);
+              }
+              break;
 
-              case msg_serialFlush: // serial.flush
-                type = readBuffer[idx++];
-                if (type == 0) {
-                  Serial.flush();
-                } else {
-                  Serial1.flush();
-                }
-                break;
+            case msg_spiSetDataMode:  // SPI.setDataMode
+              val = client.read();
+              if (val == 0) {
+                SPI.setDataMode(SPI_MODE0);
+              } else if (val == 1) {
+                SPI.setDataMode(SPI_MODE1);
+              } else if (val == 2) {
+                SPI.setDataMode(SPI_MODE2);
+              } else if (val == 3) {
+                SPI.setDataMode(SPI_MODE3);
+              }
+              break;
 
-              // SPI API
-              case msg_spiBegin:  // SPI.begin
-                SPI.begin();
-                break;
+            case msg_spiTransfer:  // SPI.transfer
+              val = client.read();
+              val = SPI.transfer(val);
+              server.write(0x24);
+              server.write(val);
+              break;
 
-              case msg_spiEnd:  // SPI.end
-                SPI.end();
-                break;
+            // Wire API
+            case msg_wireBegin:  // Wire.begin
+              address = client.read();
+              if (address == 0) {
+                Wire.begin();
+              } else {
+                Wire.begin(address);
+              }
+              break;
 
-              case msg_spiSetBitOrder:  // SPI.setBitOrder
-                type = readBuffer[idx++];
-                SPI.setBitOrder((type ? MSBFIRST : LSBFIRST));
-                break;
+            case msg_wireRequestFrom:  // Wire.requestFrom
+              address = client.read();
+              val = client.read();
+              stop = client.read();
+              Wire.requestFrom(address, val, stop);
+              break;
 
-              case msg_spiSetClockDivider:  // SPI.setClockDivider
-                val = readBuffer[idx++];
-                if (val == 0) {
-                  SPI.setClockDivider(SPI_CLOCK_DIV2);
-                } else if (val == 1) {
-                  SPI.setClockDivider(SPI_CLOCK_DIV4);
-                } else if (val == 2) {
-                  SPI.setClockDivider(SPI_CLOCK_DIV8);
-                } else if (val == 3) {
-                  SPI.setClockDivider(SPI_CLOCK_DIV16);
-                } else if (val == 4) {
-                  SPI.setClockDivider(SPI_CLOCK_DIV32);
-                } else if (val == 5) {
-                  SPI.setClockDivider(SPI_CLOCK_DIV64);
-                } else if (val == 6) {
-                  SPI.setClockDivider(SPI_CLOCK_DIV128);
-                } else if (val == 7) {
-                  SPI.setClockDivider(SPI_CLOCK_DIV256);
-                }
-                break;
+            case msg_wireBeginTransmission:  // Wire.beginTransmission
+              address = client.read();
+              Wire.beginTransmission(address);
+              break;
 
-              case msg_spiSetDataMode:  // SPI.setDataMode
-                val = readBuffer[idx++];
-                if (val == 0) {
-                  SPI.setDataMode(SPI_MODE0);
-                } else if (val == 1) {
-                  SPI.setDataMode(SPI_MODE1);
-                } else if (val == 2) {
-                  SPI.setDataMode(SPI_MODE2);
-                } else if (val == 3) {
-                  SPI.setDataMode(SPI_MODE3);
-                }
-                break;
+            case msg_wireEndTransmission:  // Wire.endTransmission
+              stop = client.read();
+              val = Wire.endTransmission(stop);
+              server.write(0x33);    // could be (action)
+              server.write(val);
+              break;
 
-              case msg_spiTransfer:  // SPI.transfer
-                val = readBuffer[idx++];
-                val = SPI.transfer(val);
-                server.write(0x24);
-                server.write(val);
-                break;
+            case msg_wireWrite:  // Wire.write
+              len = client.read();
+              uint8_t wireData[len];
 
-              // Wire API
-              case msg_wireBegin:  // Wire.begin
-                address = readBuffer[idx++];
-                if (address == 0) {
-                  Wire.begin();
-                } else {
-                  Wire.begin(address);
-                }
-                break;
+              for (i = 0; i< len; i++) {
+                wireData[i] = client.read();
+              }
+              val = Wire.write(wireData, len);
 
-              case msg_wireRequestFrom:  // Wire.requestFrom
-                address = readBuffer[idx++];
-                val = readBuffer[idx++];
-                stop = readBuffer[idx++];
-                Wire.requestFrom(address, val, stop);
-                break;
+              server.write(0x34);    // could be (action)
+              server.write(val);
+              break;
 
-              case msg_wireBeginTransmission:  // Wire.beginTransmission
-                address = readBuffer[idx++];
-                Wire.beginTransmission(address);
-                break;
+            case msg_wireAvailable:  // Wire.available
+              val = Wire.available();
+              server.write(0x35);    // could be (action)
+              server.write(val);
+              break;
 
-              case msg_wireEndTransmission:  // Wire.endTransmission
-                stop = readBuffer[idx++];
-                val = Wire.endTransmission(stop);
-                server.write(0x33);    // could be (action)
-                server.write(val);
-                break;
-
-              case msg_wireWrite:  // Wire.write
-                len = readBuffer[idx++];
-                // uint8_t wireData[len];
-
-                if (idx + len < length) {
-                  // for (i = 0; i< len; i++) {
-                  // wireData[i] = readBuffer[idx++];
-                  // }
-                  // val = Wire.write(wireData, len);
-
-                  // note: byte and uint8_t are both typecast from unsigned char.
-                  val = Wire.write((uint8_t *) (readBuffer + idx), len);
-                  idx += len;
-                  server.write(0x34);    // could be (action)
-                  server.write(val);
-                } else {
-                  // fix up an incomplete message, putting it at the front
-                  //    of the buffer:
-                  // the first byte has to be the action value, then the len,
-                  //    and then remaining bytes get copied.
-                  // then bail.
-                  readBuffer[0] = action;
-                  readBuffer[1] = len;
-                  memcpy (readBuffer + 2, readBuffer + idx, length - idx);
-                  length = 0;
-                  return;
-                }
-                break;
-
-              case msg_wireAvailable:  // Wire.available
-                val = Wire.available();
-                server.write(0x35);    // could be (action)
-                server.write(val);
-                break;
-
-              case msg_wireRead:  // Wire.read
-                val = Wire.read();
-                server.write(0x36);    // could be (action)
-                server.write(val);
-                break;
+            case msg_wireRead:  // Wire.read
+              val = Wire.read();
+              server.write(0x36);    // could be (action)
+              server.write(val);
+              break;
 
 
-              case msg_servoAttach:
-                pin = readBuffer[idx++];
-                servos[pin].attach(pin);
-                break;
+            case msg_servoAttach:
+              pin = client.read();
+              servos[pin].attach(pin);
+              break;
 
-              case msg_servoWrite:
-                pin = readBuffer[idx++];
-                val = readBuffer[idx++];
-                servos[pin].write(val);
-                break;
+            case msg_servoWrite:
+              pin = client.read();
+              val = client.read();
+              servos[pin].write(val);
+              break;
 
-              case msg_servoWriteMicroseconds:
-                pin = readBuffer[idx++];
-                val = readBuffer[idx++];
-                servos[pin].writeMicroseconds(val);
-                break;
+            case msg_servoWriteMicroseconds:
+              pin = client.read();
+              val = client.read();
+              servos[pin].writeMicroseconds(val);
+              break;
 
-              case msg_servoRead:
-                pin = readBuffer[idx++];
-                val = servos[pin].read();
-                server.write(0x43);    // could be (action)
-                server.write(pin);
-                server.write(val);
-                break;
+            case msg_servoRead:
+              pin = client.read();
+              val = servos[pin].read();
+              server.write(0x43);    // could be (action)
+              server.write(pin);
+              server.write(val);
+              break;
 
-              case msg_servoAttached:
-                pin = readBuffer[idx++];
-                val = servos[pin].attached();
-                server.write(0x44);    // could be (action)
-                server.write(pin);
-                server.write(val);
-                break;
+            case msg_servoAttached:
+              pin = client.read();
+              val = servos[pin].attached();
+              server.write(0x44);    // could be (action)
+              server.write(pin);
+              server.write(val);
+              break;
 
-              case msg_servoDetach:
-                pin = readBuffer[idx++];
-                servos[pin].detach();
-                break;
+            case msg_servoDetach:
+              pin = client.read();
+              servos[pin].detach();
+              break;
 
-              default: // noop
-                break;
+            default: // noop
+              break;
 
-            } // <-- This is the end of the switch
-          } // <-- This is the end of if (idx+msgMinLength[] < length)
-          else {
-            // fix up an incomplete message, putting it at the front of
-            //    the buffer:
-            // the first byte has to be the action value, then the
-            //    remaining bytes get copied.
-            // then bail.
-            readBuffer[0] = action;
-            memcpy (readBuffer + 1, readBuffer + idx, length - idx);
-            length = 0;
-            return;
-          }
-        } // <-- This is the end of the valid action check
-        // this is a serious problem, if action isn't valid.
-        else {
-          // action is bad.
-          // move on to the next byte.
-          idx++;
-        }
-
-      } // <-- This is the end of the while
-
-      if (idx < length) {
-        // fix up an incomplete message, putting it at the front of
-        //    the buffer:
-        // the first byte has to be the action value, then the
-        //    remaining bytes get copied.
-        readBuffer[0] = action;
-        memcpy (readBuffer + 1, readBuffer + idx, length - idx);
-        length = 0;
-      } else {
-        length = 0;
-      }
-
+          } // <-- This is the end of the switch
+        } // <-- This is the end of if (idx+msgMinLength[] < length)
+      } // <-- This is the end of the valid action check
     } // <-- This is the end of the length check
   } else {
     // if no client is yet connected, check for a new connection
