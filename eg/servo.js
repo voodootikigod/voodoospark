@@ -1,15 +1,46 @@
 var Spark = require("../../spark-io");
 var board = new Spark({
-  token: process.env.SPARK_TOKEN,
-  deviceId: process.env.SPARK_DEVICE_ID
+    token: process.env.SPARK_TOKEN,
+    deviceId: process.env.SPARK_DEVICE_ID
 });
+
+
+function setup() {
+    board.pinMode("D1", board.MODES.OUTPUT);
+    board.pinMode("D0", board.MODES.OUTPUT);
+
+}
 
 board.on("ready", function() {
-  console.log("CONNECTED");
+    console.log("CONNECTED");
 
-  this.pinMode("D1", this.MODES.OUTPUT);
-  // Analog write to a digital pin for Servos
-  this.analogWrite("D1", 150);
+    setup();
+    // Analog write to a digital pin for Servos
 
-  // This should just make the continuous servo turn
+    // This should just make the continuous servo turn
 });
+
+
+function forward() {
+    board.analogWrite("D1", 80);
+    board.analogWrite("D0", 250);
+}
+function backward() {
+    board.analogWrite("D1", 250);
+    board.analogWrite("D0", 80);
+}
+
+function stop() {
+    board.analogWrite("D1", 0);
+    board.analogWrite("D0", 0);
+  }
+
+
+  var i = 0;
+
+  var i = setInterval(function () {
+    i = (i+1)%255;
+    console.log(i);
+    board.analogWrite("D0", i);
+
+  }, )
