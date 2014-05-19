@@ -2,7 +2,7 @@
   ******************************************************************************
   * @file    voodoospark.cpp
   * @author  Chris Williams
-  * @version V2.0.4
+  * @version V2.0.5
   * @date    07-May-2014
   * @brief   Exposes the firmware level API through a TCP Connection initiated
   *          to the spark device
@@ -32,7 +32,7 @@
   ******************************************************************************
   */
 
-#define DEBUG 0
+#define DEBUG 1
 
 // Port = 0xbeef
 #define PORT 48879
@@ -243,7 +243,7 @@ void loop() {
     if (a > 0) {
 
       #ifdef DEBUG
-      Serial.print("Bytes Available: ");
+      Serial.print("Raw a value: ");
       Serial.println(a, HEX);
       #endif
 
@@ -257,7 +257,7 @@ void loop() {
 
 
       #ifdef DEBUG
-      Serial.print("Bytes Available: ");
+      Serial.print("Final a value: ");
       Serial.println(a, HEX);
       #endif
       // read into the buffer at offset length
@@ -270,18 +270,12 @@ void loop() {
       idx = 0;
 
       // parse and execute commands
-
-
-      #ifdef DEBUG
-      Serial.print("Bytes Available: ");
-      Serial.println(a, HEX);
-      #endif
-
-
       while (idx < length) {
         #ifdef DEBUG
-        Serial.print("idx :length");
-        Serial.print(idx, HEX);
+        Serial.print("idx: ");
+        Serial.println(idx, HEX);
+
+        Serial.print("length: ");
         Serial.println(length, HEX);
         #endif
 
@@ -670,6 +664,8 @@ void loop() {
         //    remaining bytes get copied.
         readBuffer[0] = action;
         memcpy (readBuffer + 1, readBuffer + idx, length - idx);
+        length = 0;
+      } else {
         length = 0;
       }
 
