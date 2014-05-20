@@ -31,6 +31,7 @@
   OTHER DEALINGS IN THE SOFTWARE.
   ******************************************************************************
   */
+#include "application.h"
 
 #define DEBUG 1
 
