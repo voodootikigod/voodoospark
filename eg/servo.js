@@ -6,8 +6,8 @@ var board = new Spark({
 
 
 function setup() {
-    board.pinMode("D1", board.MODES.OUTPUT);
-    board.pinMode("D0", board.MODES.OUTPUT);
+    board.pinMode("D1", board.MODES.SERVO);
+    board.pinMode("D0", board.MODES.SERVO);
 
 }
 
@@ -22,15 +22,15 @@ board.on("ready", function() {
 
 
 function forward() {
-    board.analogWrite("D1", 250);
-    board.analogWrite("D0", 80);
+    board.servoWrite("D1", 250);
+    board.servoWrite("D0", 80);
 }
 function backward() {
-    board.analogWrite("D1", 80);
-    board.analogWrite("D0", 250);
+    board.servoWrite("D1", 80);
+    board.servoWrite("D0", 250);
 }
 
 function stop() {
-    board.analogWrite("D1", 0);
-    board.analogWrite("D0", 0);
-  }
+    board.servoWrite("D1", 0);
+    board.servoWrite("D0", 0);
+}
