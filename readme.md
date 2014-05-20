@@ -20,7 +20,7 @@ Alternately, the firmware may be loaded using the Spark CLI ([spark-cli](https:/
 ``` bash
 npm install -g spark-cli
 spark cloud login
-spark cloud flash (device-id) src/voodoospark.cpp
+spark cloud flash SPARK_DEVICE_ID src/voodoospark.cpp
 ```
 
 
