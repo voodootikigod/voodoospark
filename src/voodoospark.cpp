@@ -2,7 +2,7 @@
   ******************************************************************************
   * @file    voodoospark.cpp
   * @author  Chris Williams
-  * @version V2.0.7
+  * @version V2.0.8
   * @date    20-May-2014
   * @brief   Exposes the firmware level API through a TCP Connection initiated
   *          to the spark device
