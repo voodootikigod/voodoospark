@@ -281,9 +281,7 @@ void loop() {
       // is the action valid?
       if (action <= msg_count) {
 
-        // is there enough data left in the buffer to
-
-        //    process this action?
+        // is there enough data left in the buffer to process this action?
         // if not, stop and fix
         if (msgMinLength[action] <= a) {
 
@@ -579,6 +577,12 @@ void loop() {
             case msg_servoWriteMicroseconds:
               pin = client.read();
               val = client.read();
+              #ifdef DEBUG
+              Serial.print("PIN: ");
+              Serial.println(pin);
+              Serial.print("WRITING 'us' TO SERVO: ");
+              Serial.println(val);
+              #endif
               servos[ToServoIndex(pin)].writeMicroseconds(val);
               break;
 
