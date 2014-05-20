@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    voodoospark.cpp
   * @author  Chris Williams
-  * @version V2.0.6
-  * @date    19-May-2014
+  * @version V2.0.7
+  * @date    20-May-2014
   * @brief   Exposes the firmware level API through a TCP Connection initiated
   *          to the spark device
   ******************************************************************************
@@ -43,9 +43,31 @@ TCPServer server = TCPServer(PORT);
 TCPClient client;
 byte reading[20];
 byte previous[20];
-Servo servos[8];
+long SerialSpeed[] = {
+  600, 1200, 2400, 4800, 9600, 14400, 19200, 28800, 38400, 57600, 115200
+};
 
-long SerialSpeed[] = { 600, 1200, 2400, 4800, 9600, 14400, 19200, 28800, 38400, 57600, 115200 };
+/*
+  PWM/Servo support is CONFIRMED available on:
+
+  D0, D1, A0, A1, A5
+
+  Allocate 5 servo objects:
+ */
+Servo servos[5];
+/*
+  The Spark board can only support PWM/Servo on specific pins, so
+  based on the pin number, determine the servo index for the allocated
+  servo object.
+ */
+int ToServoIndex(int pin) {
+  // D0, D1
+  if (pin == 0 || pin == 1) return pin;
+  // A0, A1
+  if (pin == 10 || pin == 11) return pin - 8;
+  // A5
+  if (pin == 15) return 4;
+}
 
 
 void send(int action, int pin, int value) {
@@ -246,21 +268,21 @@ void loop() {
 
       #ifdef DEBUG
       Serial.print("Bytes Available: ");
-      Serial.println(a, HEX);
+      Serial.println(a, DEC);
       #endif
 
       action = client.read();
 
       #ifdef DEBUG
       Serial.print("Action received: ");
-      Serial.println(action, HEX);
+      Serial.println(action, DEC);
       #endif
 
       // is the action valid?
       if (action <= msg_count) {
 
-
         // is there enough data left in the buffer to
+
         //    process this action?
         // if not, stop and fix
         if (msgMinLength[action] <= a) {
@@ -273,11 +295,11 @@ void loop() {
               mode = client.read();
               #ifdef DEBUG
               Serial.print("PIN received: ");
-              Serial.println(pin, HEX);
+              Serial.println(pin);
               Serial.print("MODE received: ");
               Serial.println(mode, HEX);
               #endif
-              // mode is modeled after Standard Firmata
+
               if (mode == 0x00) {
                 pinMode(pin, INPUT);
               } else if (mode == 0x02) {
@@ -286,6 +308,14 @@ void loop() {
                 pinMode(pin, INPUT_PULLDOWN);
               } else if (mode == 0x01) {
                 pinMode(pin, OUTPUT);
+              } else if (mode == 0x04) {
+                pinMode(pin, OUTPUT);
+                // Don't re-attach servos
+                if (!servos[ToServoIndex(pin)].attached()) {
+                  // If no servo object has been attached to pin at
+                  // this servo index, attach it now.
+                  servos[ToServoIndex(pin)].attach(pin);
+                }
               }
               break;
 
@@ -294,7 +324,7 @@ void loop() {
               val = client.read();
               #ifdef DEBUG
               Serial.print("PIN received: ");
-              Serial.println(pin, HEX);
+              Serial.println(pin, DEC);
               Serial.print("VALUE received: ");
               Serial.println(val, HEX);
               #endif
@@ -306,7 +336,7 @@ void loop() {
               val = client.read();
               #ifdef DEBUG
               Serial.print("PIN received: ");
-              Serial.println(pin, HEX);
+              Serial.println(pin, DEC);
               Serial.print("VALUE received: ");
               Serial.println(val, HEX);
               #endif
@@ -318,7 +348,7 @@ void loop() {
               val = digitalRead(pin);
               #ifdef DEBUG
               Serial.print("PIN received: ");
-              Serial.println(pin, HEX);
+              Serial.println(pin, DEC);
               Serial.print("VALUE sent: ");
               Serial.println(val, HEX);
               #endif
@@ -332,7 +362,7 @@ void loop() {
               val = analogRead(pin);
               #ifdef DEBUG
               Serial.print("PIN received: ");
-              Serial.println(pin, HEX);
+              Serial.println(pin, DEC);
               Serial.print("VALUE sent: ");
               Serial.println(val, HEX);
               #endif
@@ -534,43 +564,35 @@ void loop() {
               server.write(val);
               break;
 
-
-            case msg_servoAttach:
-              pin = client.read();
-              servos[pin].attach(pin);
-              break;
-
             case msg_servoWrite:
               pin = client.read();
               val = client.read();
-              servos[pin].write(val);
+              #ifdef DEBUG
+              Serial.print("PIN: ");
+              Serial.println(pin);
+              Serial.print("WRITING TO SERVO: ");
+              Serial.println(val);
+              #endif
+              servos[ToServoIndex(pin)].write(val);
               break;
 
             case msg_servoWriteMicroseconds:
               pin = client.read();
               val = client.read();
-              servos[pin].writeMicroseconds(val);
+              servos[ToServoIndex(pin)].writeMicroseconds(val);
               break;
 
             case msg_servoRead:
               pin = client.read();
-              val = servos[pin].read();
+              val = servos[ToServoIndex(pin)].read();
               server.write(0x43);    // could be (action)
-              server.write(pin);
-              server.write(val);
-              break;
-
-            case msg_servoAttached:
-              pin = client.read();
-              val = servos[pin].attached();
-              server.write(0x44);    // could be (action)
               server.write(pin);
               server.write(val);
               break;
 
             case msg_servoDetach:
               pin = client.read();
-              servos[pin].detach();
+              servos[ToServoIndex(pin)].detach();
               break;
 
             default: // noop
