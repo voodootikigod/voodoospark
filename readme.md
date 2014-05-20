@@ -14,6 +14,16 @@ With your Spark device connected to a Wifi network and has already gone through 
 4.  Click "Flash"
 5.  Once the flashing process is complete, close the Spark.io Editor.
 
+
+Alternately, the firmware may be loaded using the Spark CLI ([spark-cli](https://github.com/spark/spark-cli)) instead of the Spark.io Editor:
+
+``` bash
+npm install -g spark-cli
+spark cloud login
+spark cloud flash (device-id) src/voodoospark.cpp
+```
+
+
 Now your Spark Core is running VoodooSpark, lets connect to it!
 
 ## Connecting the Spark Core to You!
