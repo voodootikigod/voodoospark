@@ -82,3 +82,12 @@ For screen this command will look like:
 ## License
 See [LICENSE](https://github.com/voodootikigod/voodoospark/blob/master/LICENSE-MIT) file.
 
+
+
+## Made With Voodoo
+
+This firmware is made and cared for by the following awesome people:
+
+* Chris Williams https://github.com/voodootikigod
+* Rick Waldron https://github.com/rwaldron
+* David Resseguie https://github.com/Resseguie

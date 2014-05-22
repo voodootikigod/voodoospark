@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    voodoospark.cpp
   * @author  Chris Williams
-  * @version V2.0.8
-  * @date    20-May-2014
+  * @version V2.1.0
+  * @date    22-May-2014
   * @brief   Exposes the firmware level API through a TCP Connection initiated
   *          to the spark device
   ******************************************************************************
@@ -33,7 +33,7 @@
   */
 #include "application.h"
 
-#define DEBUG 1
+#define DEBUG 0
 
 // Port = 0xbeef
 #define PORT 48879
