@@ -38,9 +38,9 @@
 // Port = 0xbeef
 #define PORT 48879
 
-// TCPClient client;
 TCPServer server = TCPServer(PORT);
 TCPClient client;
+bool isConnected = false;
 byte reading[20];
 byte previous[20];
 long SerialSpeed[] = {
@@ -106,15 +106,29 @@ void report() {
   }
 }
 
+void reset() {
+  #ifdef DEBUG
+  Serial.print("RESETTING");
+  #endif
+
+  for (int i = 0; i < 20; i++) {
+    // Clear the pin read lists
+    reading[i] = 0;
+    previous[i] = 0;
+
+    // Detach any attached servos
+    if (i < 8) {
+      if (servos[i].attached()) {
+        servos[i].detach();
+      }
+    }
+  }
+}
+
 char myIpString[24];
 
 
 void setup() {
-
-  for (int i = 0; i < 20; i++) {
-    reading[i] = 0;
-    previous[i] = 0;
-  }
 
   server.begin();
   netapp_ipconfig(&ip_config);
@@ -265,9 +279,9 @@ int idx, action, a;
 
 void loop() {
   if (client.connected()) {
+    isConnected = true;
+
     report();
-
-
 
     a = client.available();
     if (a > 0) {
@@ -314,12 +328,10 @@ void loop() {
                 pinMode(pin, OUTPUT);
               } else if (mode == 0x04) {
                 pinMode(pin, OUTPUT);
-                // Don't re-attach servos
-                if (!servos[ToServoIndex(pin)].attached()) {
-                  // If no servo object has been attached to pin at
-                  // this servo index, attach it now.
-                  servos[ToServoIndex(pin)].attach(pin);
+                if (servos[ToServoIndex(pin)].attached()) {
+                  servos[ToServoIndex(pin)].detach();
                 }
+                servos[ToServoIndex(pin)].attach(pin);
               }
               break;
 
@@ -613,7 +625,13 @@ void loop() {
       } // <-- This is the end of the valid action check
     } // <-- This is the end of the length check
   } else {
-    // if no client is yet connected, check for a new connection
+    // Upon disconnection, reset the state
+    if (isConnected) {
+      isConnected = false;
+      reset();
+    }
+
+    // If no client is yet connected, check for a new connection
     client = server.available();
   }
 }
