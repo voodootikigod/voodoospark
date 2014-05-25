@@ -65,16 +65,9 @@ int ToServoIndex(int pin) {
   if (pin == 0 || pin == 1) return pin;
   // A0, A1
   if (pin == 10 || pin == 11) return pin - 8;
-  // A4
-  if (pin == 15) return 4;
-  // A5
-  if (pin == 16) return 5;
-  // A6
-  if (pin == 17) return 6;
-  // A7
-  if (pin == 18) return 7;
+  // A4, A5, A6, A7
+  if (pin >= 14) return pin - 10;
 }
-
 
 void send(int action, int pin, int value) {
   if (previous[pin] != value) {
