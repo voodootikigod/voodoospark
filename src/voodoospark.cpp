@@ -50,11 +50,11 @@ long SerialSpeed[] = {
 /*
   PWM/Servo support is CONFIRMED available on:
 
-  D0, D1, A0, A1, A5
+  D0, D1, A0, A1, A5, A7
 
-  Allocate 5 servo objects:
+  Allocate 6 servo objects:
  */
-Servo servos[5];
+Servo servos[6];
 /*
   The Spark board can only support PWM/Servo on specific pins, so
   based on the pin number, determine the servo index for the allocated
@@ -67,6 +67,8 @@ int ToServoIndex(int pin) {
   if (pin == 10 || pin == 11) return pin - 8;
   // A5
   if (pin == 15) return 4;
+  // A7
+  if (pin == 17) return 6;
 }
 
 
