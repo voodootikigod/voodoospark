@@ -52,7 +52,7 @@ long SerialSpeed[] = {
 
   D0, D1, A0, A1, A4, A5, A7
 
-  Allocate 6 servo objects:
+  Allocate 7 servo objects:
  */
 Servo servos[7];
 /*
