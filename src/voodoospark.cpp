@@ -68,7 +68,7 @@ int ToServoIndex(int pin) {
   // A5
   if (pin == 15) return 4;
   // A7
-  if (pin == 17) return 6;
+  if (pin == 17) return 5;
 }
 
 
