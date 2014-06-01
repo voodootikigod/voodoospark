@@ -42,7 +42,7 @@
   api_target_url: http://docs.spark.io/#/firmware/i-o-digitalread
   parameters: >
     1. **Pin Number:** The number of the pin whose value you wish to set
-  return: 3 bytes which have 0x03 as the first byte, the pin as the second, and the value as the third.
+  return: 4 bytes which have 0x03 as the first byte, the pin as the second, lsb as third and msb as fourth.
 
 - direction: To Spark
   command: "0x04"
@@ -51,7 +51,7 @@
   api_target_url: http://docs.spark.io/#/firmware/i-o-analogread
   parameters: >
     1. **Pin Number:** The number of the pin whose value you wish to set
-  return: 3 bytes which have 0x03 as the first byte, the pin as the second, and the value as the third.
+  return: 4 bytes which have 0x04 as the first byte, the pin as the second, lsb as third and msb as fourth.
 
 - direction: To Spark
   command: "0x05"
@@ -59,10 +59,10 @@
   api_target: Always Send Bit
   api_target_url: #
   parameters: >
-    1. **Pin Number:** The number of the pin whose value will always be sent in the report send back.
+    1. **Pin Number:** The number of the pin whose value will always be sent in the continuous reporting stream.
 
-    2. **Value:** The value to set the pin (boolean value).
-  return: None
+    2. **Value:** The value to set the pin, 1 for digital and 2 for analog.
+  return:
 
 - direction: To Spark
   command: "0x10"
@@ -91,7 +91,7 @@
   api_target_url: http://docs.spark.io/#/firmware/serial-peek
   parameters: >
     1. **Type:** 0 will use Serial and any other value will use Serial1.
-  return: 3 bytes which have 0x12 as the first byte, the type as the second, and the return value as the third.
+  return: 4 bytes which have 0x12 as the first byte, the pin as the second, lsb as third and msb as fourth.
 
 - direction: To Spark
   command: "0x13"
@@ -100,7 +100,7 @@
   api_target_url: http://docs.spark.io/#/firmware/serial-available
   parameters: >
     1. **Type:** 0 will use Serial and any other value will use Serial1.
-  return: 3 bytes which have 0x13 as the first byte, the type as the second, and the return value as the third.
+  return: 4 bytes which have 0x13 as the first byte, the pin as the second, lsb as third and msb as fourth.
 
 - direction: To Spark
   command: "0x14"
@@ -123,7 +123,7 @@
   parameters: >
     1. **Type:** 0 will use Serial and any other value will use Serial1.
 
-  return: 3 bytes which have 0x15 as the first byte, the type as the second, and the return value as the third.
+  return: 4 bytes which have 0x15 as the first byte, the pin as the second, lsb as third and msb as fourth.
 
 
 
