@@ -8,9 +8,10 @@
 
     2. **Mode:** The mode to set the pin to where the following values map to the named modes:
        * 0 => INPUT
-       * 1 => OUTPUT
+       * 1 => OUTPUT (Use for Digital, Analog and PWM writes)
        * 2 => INPUT_PULLUP
        * 3 => INPUT_PULLDOWN
+       * 4 => SERVO (Use for Servo writes)
   return: None
 
 - direction: To Spark
@@ -62,7 +63,7 @@
     1. **Pin Number:** The number of the pin whose value will always be sent in the continuous reporting stream.
 
     2. **Value:** The value to set the pin, 1 for digital and 2 for analog.
-  return:
+  return: None
 
 - direction: To Spark
   command: "0x10"
