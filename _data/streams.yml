@@ -4,11 +4,8 @@
   stream_name: Digital Read Reporting
   bytes: >
     1. **Pin Number:** The number of the pin being reported
-
     2. **LSB:** bits 0-6
-
     3. **MSB:** bits 7-13
-
 
 - direction: To Host
   command: "0x04"
@@ -16,7 +13,5 @@
   stream_name: Analog Read Reporting
   bytes: >
     1. **Pin Number:** The number of the pin being reported
-
     2. **LSB:** bits 0-6
-
     3. **MSB:** bits 7-13

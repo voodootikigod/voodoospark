@@ -126,19 +126,6 @@
 
   return: 4 bytes which have 0x15 as the first byte, the pin as the second, lsb as third and msb as fourth.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 - direction: To Spark
   command: "0x16"
   id: serialflush
