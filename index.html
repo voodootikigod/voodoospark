@@ -57,4 +57,18 @@ layout: default
 
 </div>
 {% endfor %}
+
+{% for item in site.data.stream %}
+<div id='{{item.id}}'>
+  <h4>{{ item.stream_name }}</h4>
+
+  <b>Direction:</b> {{ item.direction }}<br/>
+  <b>Action:</b> {{ item.command }}<br/>
+  <b>Subsequent Bytes/Parameters:</b><br/>
+  {{ item.parameters  | markdownify }}
+
+
+</div>
+{% endfor %}
+
 </div>
