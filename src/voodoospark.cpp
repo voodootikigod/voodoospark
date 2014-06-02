@@ -72,6 +72,10 @@ int ToServoIndex(int pin) {
 }
 
 void send(int action, int pin, int value) {
+  // See https://github.com/voodootikigod/voodoospark/issues/20
+  // to understand why the send function splits values
+  // into two 7-bit bytes before sending.
+  //
   int lsb = value & 0x7f;
   int msb = value >> 0x07 & 0x7f;
 
