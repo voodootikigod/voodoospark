@@ -21,7 +21,7 @@ layout: default
 <h2 id='connecting'>Connecting to the Spark Core</h2>
 <p>The way VoodooSpark works is to use the Spark Cloud as a lookup service to find out the IP Address of the Spark Device. With that address, we open a TCP connection to the Spark Device from your host machine and send it commands. It is that simple.</p>
 <p>In order to connect the Spark Core to your computer, you will first need to issue an HTTP GET request to the Spark Cloud. This can be done via any programming language, but for this example we are using a simple CURL command. You will need some information outlined with curly braces below, please note the {DEVICE-ID} and {ACCESS-TOKEN} are available from the <a href="https://www.spark.io/build">Spark.io Editor</a></p>
-<pre><code>curl https://api.spark.io/v1/devices/{DEVICE-ID}/endpoint?access_token={ACCESS-TOKEN}"</code></pre>
+<pre><code>curl "https://api.spark.io/v1/devices/{DEVICE-ID}/endpoint?access_token={ACCESS-TOKEN}"</code></pre>
 <p>This should return a JSON document that looks similar to this:</p>
 <pre><code>{
   "cmd": "VarReturn",
