@@ -375,6 +375,10 @@ void processInput() {
         Serial.println(mode, HEX);
         #endif
 
+        if (servos[ToServoIndex(pin)].attached()) {
+          servos[ToServoIndex(pin)].detach();
+        }
+
         if (mode == 0x00) {
           pinMode(pin, INPUT);
         } else if (mode == 0x02) {
@@ -385,9 +389,6 @@ void processInput() {
           pinMode(pin, OUTPUT);
         } else if (mode == 0x04) {
           pinMode(pin, OUTPUT);
-          if (servos[ToServoIndex(pin)].attached()) {
-            servos[ToServoIndex(pin)].detach();
-          }
           servos[ToServoIndex(pin)].attach(pin);
         }
         break;
@@ -649,25 +650,15 @@ void processInput() {
         servos[ToServoIndex(pin)].write(val);
         break;
 
-      case msg_servoDetach:
-        pin = cached[1];
-        servos[ToServoIndex(pin)].detach();
-        break;
-
       default: // noop
         break;
     } // <-- This is the end of the switch
 
 
-    // Clear the remaining
-    for (i = 0; i < 32; i++) {
+    // Clear the cached bytes
+    for (i = 0; i < 4; i++) {
       cached[i] = 0;
     }
-
-    #ifdef DEBUG
-    Serial.println("ACTION Complete");
-    Serial.println("----------------------");
-    #endif
   }
 }
 
