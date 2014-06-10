@@ -33,7 +33,7 @@
   */
 #include "application.h"
 
-#define DEBUG 0
+#define DEBUG 1
 
 // Port = 0xbeef
 #define PORT 48879
@@ -48,13 +48,13 @@
 #define msg_setAlwaysSendBit           (0x05)
 #define msg_setSampleInterval          (0x06)
 /* NOTE GAP */
-#define msg_serialBegin                (0x10)
-#define msg_serialEnd                  (0x11)
-#define msg_serialPeek                 (0x12)
-#define msg_serialAvailable            (0x13)
-#define msg_serialWrite                (0x14)
-#define msg_serialRead                 (0x15)
-#define msg_serialFlush                (0x16)
+// #define msg_serialBegin                (0x10)
+// #define msg_serialEnd                  (0x11)
+// #define msg_serialPeek                 (0x12)
+// #define msg_serialAvailable            (0x13)
+// #define msg_serialWrite                (0x14)
+// #define msg_serialRead                 (0x15)
+// #define msg_serialFlush                (0x16)
 /* NOTE GAP */
 // #define msg_spiBegin                   (0x20)
 // #define msg_spiEnd                     (0x21)
@@ -453,77 +453,77 @@ void processInput() {
         }
         break;
 
-      // Serial API
-      case msg_serialBegin:  // serial.begin
-        type = cached[1];
-        speed = cached[2];
-        if (type == 0) {
-          Serial.begin(SerialSpeed[speed]);
-        } else {
-          Serial1.begin(SerialSpeed[speed]);
-        }
-        break;
+      // // Serial API
+      // case msg_serialBegin:  // serial.begin
+      //   type = cached[1];
+      //   speed = cached[2];
+      //   if (type == 0) {
+      //     Serial.begin(SerialSpeed[speed]);
+      //   } else {
+      //     Serial1.begin(SerialSpeed[speed]);
+      //   }
+      //   break;
 
-      case msg_serialEnd:  // serial.end
-        type = cached[1];
-        if (type == 0) {
-          Serial.end();
-        } else {
-          Serial1.end();
-        }
-        break;
+      // case msg_serialEnd:  // serial.end
+      //   type = cached[1];
+      //   if (type == 0) {
+      //     Serial.end();
+      //   } else {
+      //     Serial1.end();
+      //   }
+      //   break;
 
-      case msg_serialPeek:  // serial.peek
-        type = cached[1];
-        if (type == 0) {
-          val = Serial.peek();
-        } else {
-          val = Serial1.peek();
-        }
-        send(0x07, type, val);
-        break;
+      // case msg_serialPeek:  // serial.peek
+      //   type = cached[1];
+      //   if (type == 0) {
+      //     val = Serial.peek();
+      //   } else {
+      //     val = Serial1.peek();
+      //   }
+      //   send(0x07, type, val);
+      //   break;
 
-      case msg_serialAvailable:  // serial.available()
-        type = cached[1];
-        if (type == 0) {
-          val = Serial.available();
-        } else {
-          val = Serial1.available();
-        }
-        send(0x07, type, val);
-        break;
+      // case msg_serialAvailable:  // serial.available()
+      //   type = cached[1];
+      //   if (type == 0) {
+      //     val = Serial.available();
+      //   } else {
+      //     val = Serial1.available();
+      //   }
+      //   send(0x07, type, val);
+      //   break;
 
-      case msg_serialWrite:  // serial.write
-        type = cached[1];
-        len = cached[2];
+      // case msg_serialWrite:  // serial.write
+      //   type = cached[1];
+      //   len = cached[2];
 
-        for (i = 0; i < len; i++) {
-          if (type == 0) {
-            Serial.write(client.read());
-          } else {
-            Serial1.write(client.read());
-          }
-        }
-        break;
+      //   for (i = 0; i < len; i++) {
+      //     if (type == 0) {
+      //       Serial.write(client.read());
+      //     } else {
+      //       Serial1.write(client.read());
+      //     }
+      //   }
+      //   break;
 
-      case msg_serialRead: // serial.read
-        type = cached[1];
-        if (type == 0) {
-          val = Serial.read();
-        } else {
-          val = Serial1.read();
-        }
-        send(0x16, type, val);
-        break;
+      // case msg_serialRead: // serial.read
+      //   type = cached[1];
+      //   if (type == 0) {
+      //     val = Serial.read();
+      //   } else {
+      //     val = Serial1.read();
+      //   }
+      //   send(0x16, type, val);
+      //   break;
 
-      case msg_serialFlush: // serial.flush
-        type = cached[1];
-        if (type == 0) {
-          Serial.flush();
-        } else {
-          Serial1.flush();
-        }
-        break;
+      // case msg_serialFlush: // serial.flush
+      //   type = cached[1];
+      //   if (type == 0) {
+      //     Serial.flush();
+      //   } else {
+      //     Serial1.flush();
+      //   }
+      //   break;
 
       // SPI API
       // case msg_spiBegin:  // SPI.begin
