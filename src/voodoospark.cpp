@@ -48,35 +48,30 @@
 #define msg_setAlwaysSendBit           (0x05)
 #define msg_setSampleInterval          (0x06)
 /* NOTE GAP */
-#define msg_serialBegin                (0x10)
-#define msg_serialEnd                  (0x11)
-#define msg_serialPeek                 (0x12)
-#define msg_serialAvailable            (0x13)
-#define msg_serialWrite                (0x14)
-#define msg_serialRead                 (0x15)
-#define msg_serialFlush                (0x16)
+// #define msg_serialBegin                (0x10)
+// #define msg_serialEnd                  (0x11)
+// #define msg_serialPeek                 (0x12)
+// #define msg_serialAvailable            (0x13)
+// #define msg_serialWrite                (0x14)
+// #define msg_serialRead                 (0x15)
+// #define msg_serialFlush                (0x16)
 /* NOTE GAP */
-#define msg_spiBegin                   (0x20)
-#define msg_spiEnd                     (0x21)
-#define msg_spiSetBitOrder             (0x22)
-#define msg_spiSetClockDivider         (0x23)
-#define msg_spiSetDataMode             (0x24)
-#define msg_spiTransfer                (0x25)
+// #define msg_spiBegin                   (0x20)
+// #define msg_spiEnd                     (0x21)
+// #define msg_spiSetBitOrder             (0x22)
+// #define msg_spiSetClockDivider         (0x23)
+// #define msg_spiSetDataMode             (0x24)
+// #define msg_spiTransfer                (0x25)
+// /* NOTE GAP */
+// #define msg_wireBegin                  (0x30)
+// #define msg_wireRequestFrom            (0x31)
+// #define msg_wireBeginTransmission      (0x32)
+// #define msg_wireEndTransmission        (0x33)
+// #define msg_wireWrite                  (0x34)
+// #define msg_wireAvailable              (0x35)
+// #define msg_wireRead                   (0x36)
 /* NOTE GAP */
-#define msg_wireBegin                  (0x30)
-#define msg_wireRequestFrom            (0x31)
-#define msg_wireBeginTransmission      (0x32)
-#define msg_wireEndTransmission        (0x33)
-#define msg_wireWrite                  (0x34)
-#define msg_wireAvailable              (0x35)
-#define msg_wireRead                   (0x36)
-/* NOTE GAP */
-#define msg_servoAttach                (0x40)
 #define msg_servoWrite                 (0x41)
-#define msg_servoWriteMicroseconds     (0x42)
-#define msg_servoRead                  (0x43)
-#define msg_servoAttached              (0x44)
-#define msg_servoDetach                (0x45)
 
 #define msg_count                      (0x46)
 
@@ -153,12 +148,9 @@ uint8_t bytesPerAction[] = {
   0,    // msg_0x3d
   0,    // msg_0x3e
   0,    // msg_0x3f
+  0,    // msg_0x40
   // servo
-  1,    // msg_servoAttach
   2,    // msg_servoWrite
-  2,    // msg_servoWriteMicroseconds
-  1,    // msg_servoRead
-  1,    // msg_servoAttached
   1,    // msg_servoDetach
 };
 
@@ -172,8 +164,8 @@ bool hasAction = false;
 bool isConnected = false;
 
 byte reporting[20];
-byte buffer[32];
-byte cached[32];
+byte buffer[16];
+byte cached[4];
 
 int bytesRead = 0;
 int bytesExpecting = 0;
@@ -263,20 +255,24 @@ void report() {
 void reset() {
   #ifdef DEBUG
   Serial.println("RESETTING");
-  Serial.println("");
   #endif
 
   bytesExpecting = 0;
   bytesRead = 0;
   hasAction = false;
 
-  for (int i = 0; i < 32; i++) {
-    cached[i] = 0;
-    buffer[i] = 0;
-
+  for (int i = 0; i < 20; i++) {
     // Clear the pin reporting list
-    if (i < 20) {
-      reporting[i] = 0;
+    reporting[i] = 0;
+
+    // Clear the incoming buffer
+    if (i < 16) {
+      buffer[i] = 0;
+    }
+
+    // Clear the action data cache
+    if (i < 4) {
+      buffer[i] = 0;
     }
 
     // Detach any attached servos
@@ -310,11 +306,11 @@ void setup() {
 void processInput() {
   int pin, mode, val, type, speed, address, stop, len, k, i;
 
-  #ifdef DEBUG
-  Serial.println("----------processInput----------");
-  Serial.print("Bytes Available: ");
-  Serial.println(available, DEC);
-  #endif
+  // #ifdef DEBUG
+  // Serial.println("----------processInput----------");
+  // Serial.print("Bytes Available: ");
+  // Serial.println(available, DEC);
+  // #endif
 
   // Only check if buffer[0] is possibly an action
   // when there is no known action in memory.
@@ -325,12 +321,12 @@ void processInput() {
     }
   }
 
-  #ifdef DEBUG
-  Serial.print("Bytes Expecting: ");
-  Serial.println(bytesExpecting, DEC);
-  Serial.print("Bytes Read: ");
-  Serial.println(bytesRead, DEC);
-  #endif
+  // #ifdef DEBUG
+  // Serial.print("Bytes Expecting: ");
+  // Serial.println(bytesExpecting, DEC);
+  // Serial.print("Bytes Read: ");
+  // Serial.println(bytesRead, DEC);
+  // #endif
 
   // When the first byte of buffer is an action and
   // enough bytes are read, begin processing the action.
@@ -458,185 +454,185 @@ void processInput() {
         break;
 
       // Serial API
-      case msg_serialBegin:  // serial.begin
-        type = cached[1];
-        speed = cached[2];
-        if (type == 0) {
-          Serial.begin(SerialSpeed[speed]);
-        } else {
-          Serial1.begin(SerialSpeed[speed]);
-        }
-        break;
+      // case msg_serialBegin:  // serial.begin
+      //   type = cached[1];
+      //   speed = cached[2];
+      //   if (type == 0) {
+      //     Serial.begin(SerialSpeed[speed]);
+      //   } else {
+      //     Serial1.begin(SerialSpeed[speed]);
+      //   }
+      //   break;
 
-      case msg_serialEnd:  // serial.end
-        type = cached[1];
-        if (type == 0) {
-          Serial.end();
-        } else {
-          Serial1.end();
-        }
-        break;
+      // case msg_serialEnd:  // serial.end
+      //   type = cached[1];
+      //   if (type == 0) {
+      //     Serial.end();
+      //   } else {
+      //     Serial1.end();
+      //   }
+      //   break;
 
-      case msg_serialPeek:  // serial.peek
-        type = cached[1];
-        if (type == 0) {
-          val = Serial.peek();
-        } else {
-          val = Serial1.peek();
-        }
-        send(0x07, type, val);
-        break;
+      // case msg_serialPeek:  // serial.peek
+      //   type = cached[1];
+      //   if (type == 0) {
+      //     val = Serial.peek();
+      //   } else {
+      //     val = Serial1.peek();
+      //   }
+      //   send(0x07, type, val);
+      //   break;
 
-      case msg_serialAvailable:  // serial.available()
-        type = cached[1];
-        if (type == 0) {
-          val = Serial.available();
-        } else {
-          val = Serial1.available();
-        }
-        send(0x07, type, val);
-        break;
+      // case msg_serialAvailable:  // serial.available()
+      //   type = cached[1];
+      //   if (type == 0) {
+      //     val = Serial.available();
+      //   } else {
+      //     val = Serial1.available();
+      //   }
+      //   send(0x07, type, val);
+      //   break;
 
-      case msg_serialWrite:  // serial.write
-        type = cached[1];
-        len = cached[2];
+      // case msg_serialWrite:  // serial.write
+      //   type = cached[1];
+      //   len = cached[2];
 
-        for (i = 0; i < len; i++) {
-          if (type == 0) {
-            Serial.write(client.read());
-          } else {
-            Serial1.write(client.read());
-          }
-        }
-        break;
+      //   for (i = 0; i < len; i++) {
+      //     if (type == 0) {
+      //       Serial.write(client.read());
+      //     } else {
+      //       Serial1.write(client.read());
+      //     }
+      //   }
+      //   break;
 
-      case msg_serialRead: // serial.read
-        type = cached[1];
-        if (type == 0) {
-          val = Serial.read();
-        } else {
-          val = Serial1.read();
-        }
-        send(0x16, type, val);
-        break;
+      // case msg_serialRead: // serial.read
+      //   type = cached[1];
+      //   if (type == 0) {
+      //     val = Serial.read();
+      //   } else {
+      //     val = Serial1.read();
+      //   }
+      //   send(0x16, type, val);
+      //   break;
 
-      case msg_serialFlush: // serial.flush
-        type = cached[1];
-        if (type == 0) {
-          Serial.flush();
-        } else {
-          Serial1.flush();
-        }
-        break;
+      // case msg_serialFlush: // serial.flush
+      //   type = cached[1];
+      //   if (type == 0) {
+      //     Serial.flush();
+      //   } else {
+      //     Serial1.flush();
+      //   }
+      //   break;
 
       // SPI API
-      case msg_spiBegin:  // SPI.begin
-        SPI.begin();
-        break;
+      // case msg_spiBegin:  // SPI.begin
+      //   SPI.begin();
+      //   break;
 
-      case msg_spiEnd:  // SPI.end
-        SPI.end();
-        break;
+      // case msg_spiEnd:  // SPI.end
+      //   SPI.end();
+      //   break;
 
-      case msg_spiSetBitOrder:  // SPI.setBitOrder
-        type = cached[1];
-        SPI.setBitOrder((type ? MSBFIRST : LSBFIRST));
-        break;
+      // case msg_spiSetBitOrder:  // SPI.setBitOrder
+      //   type = cached[1];
+      //   SPI.setBitOrder((type ? MSBFIRST : LSBFIRST));
+      //   break;
 
-      case msg_spiSetClockDivider:  // SPI.setClockDivider
-        val = cached[1];
-        if (val == 0) {
-          SPI.setClockDivider(SPI_CLOCK_DIV2);
-        } else if (val == 1) {
-          SPI.setClockDivider(SPI_CLOCK_DIV4);
-        } else if (val == 2) {
-          SPI.setClockDivider(SPI_CLOCK_DIV8);
-        } else if (val == 3) {
-          SPI.setClockDivider(SPI_CLOCK_DIV16);
-        } else if (val == 4) {
-          SPI.setClockDivider(SPI_CLOCK_DIV32);
-        } else if (val == 5) {
-          SPI.setClockDivider(SPI_CLOCK_DIV64);
-        } else if (val == 6) {
-          SPI.setClockDivider(SPI_CLOCK_DIV128);
-        } else if (val == 7) {
-          SPI.setClockDivider(SPI_CLOCK_DIV256);
-        }
-        break;
+      // case msg_spiSetClockDivider:  // SPI.setClockDivider
+      //   val = cached[1];
+      //   if (val == 0) {
+      //     SPI.setClockDivider(SPI_CLOCK_DIV2);
+      //   } else if (val == 1) {
+      //     SPI.setClockDivider(SPI_CLOCK_DIV4);
+      //   } else if (val == 2) {
+      //     SPI.setClockDivider(SPI_CLOCK_DIV8);
+      //   } else if (val == 3) {
+      //     SPI.setClockDivider(SPI_CLOCK_DIV16);
+      //   } else if (val == 4) {
+      //     SPI.setClockDivider(SPI_CLOCK_DIV32);
+      //   } else if (val == 5) {
+      //     SPI.setClockDivider(SPI_CLOCK_DIV64);
+      //   } else if (val == 6) {
+      //     SPI.setClockDivider(SPI_CLOCK_DIV128);
+      //   } else if (val == 7) {
+      //     SPI.setClockDivider(SPI_CLOCK_DIV256);
+      //   }
+      //   break;
 
-      case msg_spiSetDataMode:  // SPI.setDataMode
-        val = cached[1];
-        if (val == 0) {
-          SPI.setDataMode(SPI_MODE0);
-        } else if (val == 1) {
-          SPI.setDataMode(SPI_MODE1);
-        } else if (val == 2) {
-          SPI.setDataMode(SPI_MODE2);
-        } else if (val == 3) {
-          SPI.setDataMode(SPI_MODE3);
-        }
-        break;
+      // case msg_spiSetDataMode:  // SPI.setDataMode
+      //   val = cached[1];
+      //   if (val == 0) {
+      //     SPI.setDataMode(SPI_MODE0);
+      //   } else if (val == 1) {
+      //     SPI.setDataMode(SPI_MODE1);
+      //   } else if (val == 2) {
+      //     SPI.setDataMode(SPI_MODE2);
+      //   } else if (val == 3) {
+      //     SPI.setDataMode(SPI_MODE3);
+      //   }
+      //   break;
 
-      case msg_spiTransfer:  // SPI.transfer
-        val = cached[1];
-        val = SPI.transfer(val);
-        server.write(0x24);
-        server.write(val);
-        break;
+      // case msg_spiTransfer:  // SPI.transfer
+      //   val = cached[1];
+      //   val = SPI.transfer(val);
+      //   server.write(0x24);
+      //   server.write(val);
+      //   break;
 
-      // Wire API
-      case msg_wireBegin:  // Wire.begin
-        address = cached[1];
-        if (address == 0) {
-          Wire.begin();
-        } else {
-          Wire.begin(address);
-        }
-        break;
+      // // Wire API
+      // case msg_wireBegin:  // Wire.begin
+      //   address = cached[1];
+      //   if (address == 0) {
+      //     Wire.begin();
+      //   } else {
+      //     Wire.begin(address);
+      //   }
+      //   break;
 
-      case msg_wireRequestFrom:  // Wire.requestFrom
-        address = cached[1];
-        val = cached[2];
-        stop = cached[3];
-        Wire.requestFrom(address, val, stop);
-        break;
+      // case msg_wireRequestFrom:  // Wire.requestFrom
+      //   address = cached[1];
+      //   val = cached[2];
+      //   stop = cached[3];
+      //   Wire.requestFrom(address, val, stop);
+      //   break;
 
-      case msg_wireBeginTransmission:  // Wire.beginTransmission
-        address = cached[1];
-        Wire.beginTransmission(address);
-        break;
+      // case msg_wireBeginTransmission:  // Wire.beginTransmission
+      //   address = cached[1];
+      //   Wire.beginTransmission(address);
+      //   break;
 
-      case msg_wireEndTransmission:  // Wire.endTransmission
-        stop = cached[1];
-        val = Wire.endTransmission(stop);
-        server.write(0x33);    // could be (action)
-        server.write(val);
-        break;
+      // case msg_wireEndTransmission:  // Wire.endTransmission
+      //   stop = cached[1];
+      //   val = Wire.endTransmission(stop);
+      //   server.write(0x33);    // could be (action)
+      //   server.write(val);
+      //   break;
 
-      case msg_wireWrite:  // Wire.write
-        len = cached[1];
-        uint8_t wireData[len];
+      // case msg_wireWrite:  // Wire.write
+      //   len = cached[1];
+      //   uint8_t wireData[len];
 
-        for (i = 0; i< len; i++) {
-          wireData[i] = cached[1];
-        }
-        val = Wire.write(wireData, len);
+      //   for (i = 0; i< len; i++) {
+      //     wireData[i] = cached[1];
+      //   }
+      //   val = Wire.write(wireData, len);
 
-        server.write(0x34);    // could be (action)
-        server.write(val);
-        break;
+      //   server.write(0x34);    // could be (action)
+      //   server.write(val);
+      //   break;
 
-      case msg_wireAvailable:  // Wire.available
-        val = Wire.available();
-        server.write(0x35);    // could be (action)
-        server.write(val);
-        break;
+      // case msg_wireAvailable:  // Wire.available
+      //   val = Wire.available();
+      //   server.write(0x35);    // could be (action)
+      //   server.write(val);
+      //   break;
 
-      case msg_wireRead:  // Wire.read
-        val = Wire.read();
-        server.write(0x36);    // could be (action)
-        server.write(val);
-        break;
+      // case msg_wireRead:  // Wire.read
+      //   val = Wire.read();
+      //   server.write(0x36);    // could be (action)
+      //   server.write(val);
+      //   break;
 
       case msg_servoWrite:
         pin = cached[1];
