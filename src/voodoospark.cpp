@@ -150,12 +150,13 @@ void setup() {
   #endif
 
   IPAddress myIp = Network.localIP();
-  static char myIpString[16] = "";
-  char octet[4];
+  static char myIpString[24] = "";
+  char octet[5];
   itoa(myIp[0],octet,10); strcat(myIpString,octet); strcat(myIpString,".");
   itoa(myIp[1],octet,10); strcat(myIpString,octet); strcat(myIpString,".");
   itoa(myIp[2],octet,10); strcat(myIpString,octet); strcat(myIpString,".");
-  itoa(myIp[3],octet,10); strcat(myIpString,octet); strcat(myIpString,".");
+  itoa(myIp[3],octet,10); strcat(myIpString,octet); strcat(myIpString,":");
+  itoa(PORT,octet,10); strcat(myIpString,octet);
   Spark.variable("endpoint", myIpString, STRING);
 
 }
