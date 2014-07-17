@@ -38,6 +38,9 @@
 // Port = 0xbeef
 #define PORT 48879
 
+// allow use of itoa() in this scope
+extern char* itoa(int a, char* buffer, unsigned char radix);
+
 // table of action codes
 // to do: make this an enum?
 #define msg_pinMode                    (0x00)
@@ -157,8 +160,6 @@ uint8_t bytesPerAction[] = {
 
 TCPServer server = TCPServer(PORT);
 TCPClient client;
-
-char myIpString[24];
 
 bool hasAction = false;
 bool isConnected = false;
@@ -297,7 +298,13 @@ void setup() {
   #endif
 
   IPAddress myIp = Network.localIP();
-  sprintf(myIpString, "%d.%d.%d.%d:%d", myIp[0], myIp[1], myIp[2], myIp[3], PORT);
+  static char myIpString[24] = "";
+  char octet[5];
+  itoa(myIp[0],octet,10); strcat(myIpString,octet); strcat(myIpString,".");
+  itoa(myIp[1],octet,10); strcat(myIpString,octet); strcat(myIpString,".");
+  itoa(myIp[2],octet,10); strcat(myIpString,octet); strcat(myIpString,".");
+  itoa(myIp[3],octet,10); strcat(myIpString,octet); strcat(myIpString,":");
+  itoa(PORT,octet,10); strcat(myIpString,octet);
   Spark.variable("endpoint", myIpString, STRING);
 
 }
