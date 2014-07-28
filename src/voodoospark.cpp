@@ -2,7 +2,7 @@
   ******************************************************************************
   * @file    voodoospark.cpp
   * @author  Chris Williams
-  * @version V2.3.0
+  * @version V2.3.1
   * @date    1-June-2014
   * @brief   Exposes the firmware level API through a TCP Connection initiated
   *          to the spark device
@@ -33,7 +33,7 @@
   */
 #include "application.h"
 
-#define DEBUG 1
+#define DEBUG 0
 
 // Port = 0xbeef
 #define PORT 48879
@@ -168,6 +168,7 @@ byte reporting[20];
 byte buffer[16];
 byte cached[4];
 
+int reporters = 0;
 int bytesRead = 0;
 int bytesExpecting = 0;
 int action, available;
@@ -233,19 +234,33 @@ void send(int action, int pin, int value) {
 }
 
 void report() {
-  for (int i = 0; i < 20; i++) {
-    if (reporting[i]) {
-      int dr = (reporting[i] & 1);
-      int ar = (reporting[i] & 2);
+  if (isConnected) {
+    for (int i = 0; i < 20; i++) {
+      if (reporting[i]) {
+        #ifdef DEBUG
+        Serial.print("Reporting: ");
+        Serial.print(i, DEC);
+        Serial.println(reporting[i], DEC);
+        #endif
 
-      if (i < 10 && dr) {
-        send(0x03, i, digitalRead(i));
-      } else {
-        if (dr) {
+        int dr = (reporting[i] & 1);
+        int ar = (reporting[i] & 2);
+
+        if (i < 10 && dr) {
           send(0x03, i, digitalRead(i));
         } else {
-          if (ar) {
-            send(0x04, i, analogRead(i));
+          if (dr) {
+            send(0x03, i, digitalRead(i));
+          } else {
+            if (ar) {
+              int adc = analogRead(i);
+              #ifdef DEBUG
+              Serial.print("Analog Report (pin, adc): ");
+              Serial.print(i, DEC);
+              Serial.println(adc, DEC);
+              #endif
+              send(0x04, i, adc);
+            }
           }
         }
       }
@@ -312,12 +327,19 @@ void setup() {
 
 void processInput() {
   int pin, mode, val, type, speed, address, stop, len, k, i;
+  int byteCount = bytesRead;
 
-  // #ifdef DEBUG
-  // Serial.println("----------processInput----------");
-  // Serial.print("Bytes Available: ");
-  // Serial.println(available, DEC);
-  // #endif
+  #ifdef DEBUG
+  Serial.println("----------processInput----------");
+  Serial.print("Bytes Available: ");
+  Serial.println(available, DEC);
+
+  for (i = 0; i < available; i++) {
+    Serial.print(i, DEC);
+    Serial.print(": ");
+    Serial.println(buffer[i], DEC);
+  }
+  #endif
 
   // Only check if buffer[0] is possibly an action
   // when there is no known action in memory.
@@ -328,12 +350,12 @@ void processInput() {
     }
   }
 
-  // #ifdef DEBUG
-  // Serial.print("Bytes Expecting: ");
-  // Serial.println(bytesExpecting, DEC);
-  // Serial.print("Bytes Read: ");
-  // Serial.println(bytesRead, DEC);
-  // #endif
+  #ifdef DEBUG
+  Serial.print("Bytes Expecting: ");
+  Serial.println(bytesExpecting, DEC);
+  Serial.print("Bytes Read: ");
+  Serial.println(bytesRead, DEC);
+  #endif
 
   // When the first byte of buffer is an action and
   // enough bytes are read, begin processing the action.
@@ -349,22 +371,25 @@ void processInput() {
 
     // Copy the expected bytes into the cache and shift
     // the unused bytes to the beginning of the buffer
-    for (k = 0; k < bytesExpecting; k++) {
-      cached[k] = buffer[k];
+    for (k = 0; k < byteCount; k++) {
+      // Cache the bytes that we're expecting for
+      // this action.
+      if (k < bytesExpecting) {
+        cached[k] = buffer[k];
+
+        // Reduce the bytesRead by the number of bytes "taken"
+        bytesRead--;
+
+        #ifdef DEBUG
+        Serial.print("Cached: ");
+        Serial.print(k, DEC);
+        Serial.println(cached[k], DEC);
+        #endif
+      }
 
       // Shift the unused buffer to the front
       buffer[k] = buffer[k + bytesExpecting];
-      buffer[k + bytesExpecting] = 0;
-
-      // Reduce the bytesRead by the number of bytes "taken"
-      bytesRead--;
     }
-
-    // Reset hasAction flag (no longer needed for this opertion)
-    // action and byte read expectation flags
-    hasAction = false;
-    bytesExpecting = 0;
-
 
     // Proceed with action processing
     switch (action) {
@@ -445,8 +470,14 @@ void processInput() {
         break;
 
       case msg_setAlwaysSendBit: // set always send bit
+        reporters++;
         pin = cached[1];
         val = cached[2];
+        #ifdef DEBUG
+        Serial.print("READ: ");
+        Serial.print(pin, DEC);
+        Serial.println(val, HEX);
+        #endif
         reporting[pin] = val;
         break;
 
@@ -659,8 +690,27 @@ void processInput() {
 
 
     // Clear the cached bytes
-    for (i = 0; i < 4; i++) {
+    for (i = 0; i < bytesExpecting; i++) {
       cached[i] = 0;
+    }
+
+    // Reset hasAction flag (no longer needed for this opertion)
+    // action and byte read expectation flags
+    hasAction = false;
+    bytesExpecting = 0;
+
+
+    #ifdef DEBUG
+    Serial.print("Leftovers: ");
+    Serial.println(bytesRead, DEC);
+    #endif
+
+    // If there were leftover bytes available,
+    // call processInput. This mechanism will continue
+    // until there are no bytes available.
+    if (bytesRead > 0) {
+      available = bytesRead;
+      processInput();
     }
   }
 }
@@ -668,6 +718,13 @@ void processInput() {
 
 void loop() {
   if (client.connected()) {
+
+    if (!isConnected) {
+      #ifdef DEBUG
+      Serial.println("--------------CONNECTED--------------");
+      #endif
+    }
+
     isConnected = true;
 
     // Process incoming bytes first
@@ -678,19 +735,23 @@ void loop() {
       // this avoids building up back pressure in
       // the client byte stream.
       for (int i = 0; i < available; i++) {
-        buffer[bytesRead] = client.read();
+        buffer[i] = client.read();
         bytesRead++;
       }
+
+      #ifdef DEBUG
+      Serial.println("--------------PROCESSING NEW DATA--------------");
+      #endif
+
       processInput();
     }
 
     // Reporting should be limited to every ~100ms
     nowms = millis();
-    if (nowms - lastms > sampleInterval) {
+    if (nowms - lastms > sampleInterval && reporters > 0) {
       lastms += sampleInterval;
       report();
     }
-
   } else {
     // Upon disconnection, reset the state
     if (isConnected) {
