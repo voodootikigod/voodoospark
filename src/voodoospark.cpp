@@ -180,10 +180,6 @@ unsigned long SerialSpeed[] = {
   600, 1200, 2400, 4800, 9600, 14400, 19200, 28800, 38400, 57600, 115200
 };
 
-
-
-
-
 /*
   PWM/Servo support is CONFIRMED available on:
 
@@ -276,6 +272,7 @@ void reset() {
   bytesExpecting = 0;
   bytesRead = 0;
   hasAction = false;
+  reporters = 0;
 
   for (int i = 0; i < 20; i++) {
     // Clear the pin reporting list
@@ -288,7 +285,7 @@ void reset() {
 
     // Clear the action data cache
     if (i < 4) {
-      buffer[i] = 0;
+      cached[i] = 0;
     }
 
     // Detach any attached servos
