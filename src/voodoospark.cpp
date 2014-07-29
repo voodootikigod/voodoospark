@@ -297,9 +297,6 @@ void reset() {
   }
 }
 
-
-
-
 void setup() {
 
   server.begin();
@@ -320,7 +317,6 @@ void setup() {
   Spark.variable("endpoint", myIpString, STRING);
 
 }
-
 
 void processInput() {
   int pin, mode, val, type, speed, address, stop, len, k, i;
