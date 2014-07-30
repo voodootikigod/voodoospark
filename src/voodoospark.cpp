@@ -240,10 +240,10 @@ void report() {
         int ar = (reporting[i] & 2);
 
         if (i < 10 && dr) {
-          send(0x03, i, digitalRead(i));
+          send(DIGITAL_READ, i, digitalRead(i));
         } else {
           if (dr) {
-            send(0x03, i, digitalRead(i));
+            send(DIGITAL_READ, i, digitalRead(i));
           } else {
             if (ar) {
               int adc = analogRead(i);
@@ -252,7 +252,7 @@ void report() {
               Serial.print(i, DEC);
               Serial.println(adc, DEC);
               #endif
-              send(0x04, i, adc);
+              send(ANALOG_READ, i, adc);
             }
           }
         }
