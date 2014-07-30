@@ -33,128 +33,125 @@
   */
 #include "application.h"
 
-#define DEBUG 0
-
-// Port = 0xbeef
-#define PORT 48879
-
 // allow use of itoa() in this scope
 extern char* itoa(int a, char* buffer, unsigned char radix);
 
+#define DEBUG 0
+#define PORT 48879
+
 // table of action codes
 // to do: make this an enum?
-#define msg_pinMode                    (0x00)
-#define msg_digitalWrite               (0x01)
-#define msg_analogWrite                (0x02)
-#define msg_digitalRead                (0x03)
-#define msg_analogRead                 (0x04)
-#define msg_setAlwaysSendBit           (0x05)
-#define msg_setSampleInterval          (0x06)
+#define PIN_MODE                    0x00
+#define DIGITAL_WRITE               0x01
+#define ANALOG_WRITE                0x02
+#define DIGITAL_READ                0x03
+#define ANALOG_READ                 0x04
+#define REPORTING                   0x05
+#define SET_SAMPLE_INTERVAL         0x06
 /* NOTE GAP */
-// #define msg_serialBegin                (0x10)
-// #define msg_serialEnd                  (0x11)
-// #define msg_serialPeek                 (0x12)
-// #define msg_serialAvailable            (0x13)
-// #define msg_serialWrite                (0x14)
-// #define msg_serialRead                 (0x15)
-// #define msg_serialFlush                (0x16)
+// #define SERIAL_BEGIN                0x10
+// #define SERIAL_END                  0x11
+// #define SERIAL_PEEK                 0x12
+// #define SERIAL_AVAILABLE            0x13
+// #define SERIAL_WRITE                0x14
+// #define SERIAL_READ                 0x15
+// #define SERIAL_FLUSH                0x16
 /* NOTE GAP */
-// #define msg_spiBegin                   (0x20)
-// #define msg_spiEnd                     (0x21)
-// #define msg_spiSetBitOrder             (0x22)
-// #define msg_spiSetClockDivider         (0x23)
-// #define msg_spiSetDataMode             (0x24)
-// #define msg_spiTransfer                (0x25)
+// #define SPI_BEGIN                   0x20
+// #define SPI_END                     0x21
+// #define SPI_SET_BIT_ORDER           0x22
+// #define SPI_SET_CLOCK               0x23
+// #define SPI_SET_DATA_MODE           0x24
+// #define SPI_TRANSFER                0x25
 // /* NOTE GAP */
-// #define msg_wireBegin                  (0x30)
-// #define msg_wireRequestFrom            (0x31)
-// #define msg_wireBeginTransmission      (0x32)
-// #define msg_wireEndTransmission        (0x33)
-// #define msg_wireWrite                  (0x34)
-// #define msg_wireAvailable              (0x35)
-// #define msg_wireRead                   (0x36)
+// #define WIRE_BEGIN                  0x30
+// #define WIRE_REQUEST_FROM           0x31
+// #define WIRE_BEGIN_TRANSMISSION     0x32
+// #define WIRE_END_TRANSMISSION       0x33
+// #define WIRE_WRITE                  0x34
+// #define WIRE_AVAILABLE              0x35
+// #define WIRE_READ                   0x36
 /* NOTE GAP */
-#define msg_servoWrite                 (0x41)
+#define SERVO_WRITE                 0x41
+#define ACTION_RANGE                0x46
 
-#define msg_count                      (0x46)
-
-uint8_t bytesPerAction[] = {
+uint8_t bytesToExpectByAction[] = {
   // digital/analog I/O
-  2,    // msg_pinMode
-  2,    // msg_digitalWrite
-  2,    // msg_analogWrite
-  1,    // msg_digitalRead
-  1,    // msg_analogRead
-  2,    // msg_setAlwaysSendBit
-  1,    // msg_setSampleInterval
+  2,    // PIN_MODE
+  2,    // DIGITAL_WRITE
+  2,    // ANALOG_WRITE
+  1,    // DIGITAL_READ
+  1,    // ANALOG_READ
+  2,    // REPORTING
+  1,    // SET_SAMPLE_INTERVAL
   // gap from 0x07-0x0f
-  0,    // msg_0x07
-  0,    // msg_0x08
-  0,    // msg_0x09
-  0,    // msg_0x0a
-  0,    // msg_0x0b
-  0,    // msg_0x0c
-  0,    // msg_0x0d
-  0,    // msg_0x0e
-  0,    // msg_0x0f
+  0,    // 0x07
+  0,    // 0x08
+  0,    // 0x09
+  0,    // 0x0a
+  0,    // 0x0b
+  0,    // 0x0c
+  0,    // 0x0d
+  0,    // 0x0e
+  0,    // 0x0f
   // serial I/O
-  2,    // msg_serialBegin
-  1,    // msg_serialEnd
-  1,    // msg_serialPeek
-  1,    // msg_serialAvailable
-  2,    // msg_serialWrite  -- variable length message!
-  1,    // msg_serialRead
-  1,    // msg_serialFlush
+  2,    // SERIAL_BEGIN
+  1,    // SERIAL_END
+  1,    // SERIAL_PEEK
+  1,    // SERIAL_AVAILABLE
+  2,    // SERIAL_WRITE  -- variable length message!
+  1,    // SERIAL_READ
+  1,    // SERIAL_FLUSH
   // gap from 0x17-0x1f
-  0,    // msg_0x17
-  0,    // msg_0x18
-  0,    // msg_0x19
-  0,    // msg_0x1a
-  0,    // msg_0x1b
-  0,    // msg_0x1c
-  0,    // msg_0x1d
-  0,    // msg_0x1e
-  0,    // msg_0x1f
+  0,    // 0x17
+  0,    // 0x18
+  0,    // 0x19
+  0,    // 0x1a
+  0,    // 0x1b
+  0,    // 0x1c
+  0,    // 0x1d
+  0,    // 0x1e
+  0,    // 0x1f
   // SPI I/O
-  0,    // msg_spiBegin
-  0,    // msg_spiEnd
-  1,    // msg_spiSetBitOrder
-  1,    // msg_spiSetClockDivider
-  1,    // msg_spiSetDataMode
-  1,    // msg_spiTransfer
+  0,    // SPI_BEGIN
+  0,    // SPI_END
+  1,    // SPI_SET_BIT_ORDER
+  1,    // SPI_SET_CLOCK
+  1,    // SPI_SET_DATA_MODE
+  1,    // SPI_TRANSFER
   // gap from 0x26-0x2f
-  0,    // msg_0x26
-  0,    // msg_0x27
-  0,    // msg_0x28
-  0,    // msg_0x29
-  0,    // msg_0x2a
-  0,    // msg_0x2b
-  0,    // msg_0x2c
-  0,    // msg_0x2d
-  0,    // msg_0x2e
-  0,    // msg_0x2f
+  0,    // 0x26
+  0,    // 0x27
+  0,    // 0x28
+  0,    // 0x29
+  0,    // 0x2a
+  0,    // 0x2b
+  0,    // 0x2c
+  0,    // 0x2d
+  0,    // 0x2e
+  0,    // 0x2f
   // wire I/O
-  1,    // msg_wireBegin
-  3,    // msg_wireRequestFrom
-  1,    // msg_wireBeginTransmission
-  1,    // msg_wireEndTransmission
-  1,    // msg_wireWrite  -- variable length message!
-  0,    // msg_wireAvailable
-  0,    // msg_wireRead
+  1,    // WIRE_BEGIN
+  3,    // WIRE_REQUEST_FROM
+  1,    // WIRE_BEGIN_TRANSMISSION
+  1,    // WIRE_END_TRANSMISSION
+  1,    // WIRE_WRITE  -- variable length message!
+  0,    // WIRE_AVAILABLE
+  0,    // WIRE_READ
   // gap from 0x37-0x3f
-  0,    // msg_0x37
-  0,    // msg_0x38
-  0,    // msg_0x39
-  0,    // msg_0x3a
-  0,    // msg_0x3b
-  0,    // msg_0x3c
-  0,    // msg_0x3d
-  0,    // msg_0x3e
-  0,    // msg_0x3f
-  0,    // msg_0x40
+  0,    // 0x37
+  0,    // 0x38
+  0,    // 0x39
+  0,    // 0x3a
+  0,    // 0x3b
+  0,    // 0x3c
+  0,    // 0x3d
+  0,    // 0x3e
+  0,    // 0x3f
+  0,    // 0x40
   // servo
-  2,    // msg_servoWrite
-  1,    // msg_servoDetach
+  2,    // SERVO_WRITE
+  1,    // SERVO_DETACH
 };
 
 
@@ -269,10 +266,17 @@ void reset() {
   Serial.println("RESETTING");
   #endif
 
+  isConnected = false;
+
+  // Clear inbound data tracking values
   bytesExpecting = 0;
   bytesRead = 0;
   hasAction = false;
   reporters = 0;
+
+  // Clear time tracking values
+  lastms = 0;
+  nowms = 0;
 
   for (int i = 0; i < 20; i++) {
     // Clear the pin reporting list
@@ -306,16 +310,17 @@ void setup() {
   Serial.begin(115200);
   #endif
 
-  IPAddress myIp = Network.localIP();
-  static char myIpString[24] = "";
+  IPAddress ip = Network.localIP();
+  static char ipAddress[24] = "";
   char octet[5];
-  itoa(myIp[0],octet,10); strcat(myIpString,octet); strcat(myIpString,".");
-  itoa(myIp[1],octet,10); strcat(myIpString,octet); strcat(myIpString,".");
-  itoa(myIp[2],octet,10); strcat(myIpString,octet); strcat(myIpString,".");
-  itoa(myIp[3],octet,10); strcat(myIpString,octet); strcat(myIpString,":");
-  itoa(PORT,octet,10); strcat(myIpString,octet);
-  Spark.variable("endpoint", myIpString, STRING);
 
+  itoa(ip[0], octet, 10); strcat(ipAddress, octet); strcat(ipAddress, ".");
+  itoa(ip[1], octet, 10); strcat(ipAddress, octet); strcat(ipAddress, ".");
+  itoa(ip[2], octet, 10); strcat(ipAddress, octet); strcat(ipAddress, ".");
+  itoa(ip[3], octet, 10); strcat(ipAddress, octet); strcat(ipAddress, ":");
+  itoa(PORT, octet, 10);  strcat(ipAddress, octet);
+
+  Spark.variable("endpoint", ipAddress, STRING);
 }
 
 void processInput() {
@@ -335,11 +340,11 @@ void processInput() {
   #endif
 
   // Only check if buffer[0] is possibly an action
-  // when there is no known action in memory.
+  // when there is no action in progress.
   if (hasAction == false) {
-    if (buffer[0] < msg_count) {
+    if (buffer[0] < ACTION_RANGE) {
       hasAction = true;
-      bytesExpecting = bytesPerAction[action] + 1;
+      bytesExpecting = bytesToExpectByAction[action] + 1;
     }
   }
 
@@ -386,7 +391,7 @@ void processInput() {
 
     // Proceed with action processing
     switch (action) {
-      case msg_pinMode:  // pinMode
+      case PIN_MODE:  // pinMode
         pin = cached[1];
         mode = cached[2];
         #ifdef DEBUG
@@ -414,7 +419,7 @@ void processInput() {
         }
         break;
 
-      case msg_digitalWrite:  // digitalWrite
+      case DIGITAL_WRITE:  // digitalWrite
         pin = cached[1];
         val = cached[2];
         #ifdef DEBUG
@@ -426,7 +431,7 @@ void processInput() {
         digitalWrite(pin, val);
         break;
 
-      case msg_analogWrite:  // analogWrite
+      case ANALOG_WRITE:  // analogWrite
         pin = cached[1];
         val = cached[2];
         #ifdef DEBUG
@@ -438,7 +443,7 @@ void processInput() {
         analogWrite(pin, val);
         break;
 
-      case msg_digitalRead:  // digitalRead
+      case DIGITAL_READ:  // digitalRead
         pin = cached[1];
         val = digitalRead(pin);
         #ifdef DEBUG
@@ -450,7 +455,7 @@ void processInput() {
         send(0x03, pin, val);
         break;
 
-      case msg_analogRead:  // analogRead
+      case ANALOG_READ:  // analogRead
         pin = cached[1];
         val = analogRead(pin);
         #ifdef DEBUG
@@ -462,7 +467,7 @@ void processInput() {
         send(0x04, pin, val);
         break;
 
-      case msg_setAlwaysSendBit: // set always send bit
+      case REPORTING: // Add pin to
         reporters++;
         pin = cached[1];
         val = cached[2];
@@ -474,18 +479,18 @@ void processInput() {
         reporting[pin] = val;
         break;
 
-      case msg_setSampleInterval: // set the sampling interval in ms
-        val = cached[1];
-        sampleInterval = val;
+      case SET_SAMPLE_INTERVAL: // set the sampling interval in ms
+        sampleInterval = cached[1];
 
-        // Lower than ~100ms will crash the spark.
+        // Lower than ~100ms will likely crash the spark,
+        // but
         if (sampleInterval < 20) {
           sampleInterval = 20;
         }
         break;
 
       // // Serial API
-      // case msg_serialBegin:  // serial.begin
+      // case SERIAL_BEGIN:  // serial.begin
       //   type = cached[1];
       //   speed = cached[2];
       //   if (type == 0) {
@@ -495,7 +500,7 @@ void processInput() {
       //   }
       //   break;
 
-      // case msg_serialEnd:  // serial.end
+      // case SERIAL_END:  // serial.end
       //   type = cached[1];
       //   if (type == 0) {
       //     Serial.end();
@@ -504,7 +509,7 @@ void processInput() {
       //   }
       //   break;
 
-      // case msg_serialPeek:  // serial.peek
+      // case SERIAL_PEEK:  // serial.peek
       //   type = cached[1];
       //   if (type == 0) {
       //     val = Serial.peek();
@@ -514,7 +519,7 @@ void processInput() {
       //   send(0x07, type, val);
       //   break;
 
-      // case msg_serialAvailable:  // serial.available()
+      // case SERIAL_AVAILABLE:  // serial.available()
       //   type = cached[1];
       //   if (type == 0) {
       //     val = Serial.available();
@@ -524,7 +529,7 @@ void processInput() {
       //   send(0x07, type, val);
       //   break;
 
-      // case msg_serialWrite:  // serial.write
+      // case SERIAL_WRITE:  // serial.write
       //   type = cached[1];
       //   len = cached[2];
 
@@ -537,7 +542,7 @@ void processInput() {
       //   }
       //   break;
 
-      // case msg_serialRead: // serial.read
+      // case SERIAL_READ: // serial.read
       //   type = cached[1];
       //   if (type == 0) {
       //     val = Serial.read();
@@ -547,7 +552,7 @@ void processInput() {
       //   send(0x16, type, val);
       //   break;
 
-      // case msg_serialFlush: // serial.flush
+      // case SERIAL_FLUSH: // serial.flush
       //   type = cached[1];
       //   if (type == 0) {
       //     Serial.flush();
@@ -557,20 +562,20 @@ void processInput() {
       //   break;
 
       // SPI API
-      // case msg_spiBegin:  // SPI.begin
+      // case SPI_BEGIN:  // SPI.begin
       //   SPI.begin();
       //   break;
 
-      // case msg_spiEnd:  // SPI.end
+      // case SPI_END:  // SPI.end
       //   SPI.end();
       //   break;
 
-      // case msg_spiSetBitOrder:  // SPI.setBitOrder
+      // case SPI_SET_BIT_ORDER:  // SPI.setBitOrder
       //   type = cached[1];
       //   SPI.setBitOrder((type ? MSBFIRST : LSBFIRST));
       //   break;
 
-      // case msg_spiSetClockDivider:  // SPI.setClockDivider
+      // case SPI_SET_CLOCK:  // SPI.setClockDivider
       //   val = cached[1];
       //   if (val == 0) {
       //     SPI.setClockDivider(SPI_CLOCK_DIV2);
@@ -591,7 +596,7 @@ void processInput() {
       //   }
       //   break;
 
-      // case msg_spiSetDataMode:  // SPI.setDataMode
+      // case SPI_SET_DATA_MODE:  // SPI.setDataMode
       //   val = cached[1];
       //   if (val == 0) {
       //     SPI.setDataMode(SPI_MODE0);
@@ -604,7 +609,7 @@ void processInput() {
       //   }
       //   break;
 
-      // case msg_spiTransfer:  // SPI.transfer
+      // case SPI_TRANSFER:  // SPI.transfer
       //   val = cached[1];
       //   val = SPI.transfer(val);
       //   server.write(0x24);
@@ -612,7 +617,7 @@ void processInput() {
       //   break;
 
       // // Wire API
-      // case msg_wireBegin:  // Wire.begin
+      // case WIRE_BEGIN:  // Wire.begin
       //   address = cached[1];
       //   if (address == 0) {
       //     Wire.begin();
@@ -621,26 +626,26 @@ void processInput() {
       //   }
       //   break;
 
-      // case msg_wireRequestFrom:  // Wire.requestFrom
+      // case WIRE_REQUEST_FROM:  // Wire.requestFrom
       //   address = cached[1];
       //   val = cached[2];
       //   stop = cached[3];
       //   Wire.requestFrom(address, val, stop);
       //   break;
 
-      // case msg_wireBeginTransmission:  // Wire.beginTransmission
+      // case WIRE_BEGIN_TRANSMISSION:  // Wire.beginTransmission
       //   address = cached[1];
       //   Wire.beginTransmission(address);
       //   break;
 
-      // case msg_wireEndTransmission:  // Wire.endTransmission
+      // case WIRE_END_TRANSMISSION:  // Wire.endTransmission
       //   stop = cached[1];
       //   val = Wire.endTransmission(stop);
       //   server.write(0x33);    // could be (action)
       //   server.write(val);
       //   break;
 
-      // case msg_wireWrite:  // Wire.write
+      // case WIRE_WRITE:  // Wire.write
       //   len = cached[1];
       //   uint8_t wireData[len];
 
@@ -653,19 +658,19 @@ void processInput() {
       //   server.write(val);
       //   break;
 
-      // case msg_wireAvailable:  // Wire.available
+      // case WIRE_AVAILABLE:  // Wire.available
       //   val = Wire.available();
       //   server.write(0x35);    // could be (action)
       //   server.write(val);
       //   break;
 
-      // case msg_wireRead:  // Wire.read
+      // case WIRE_READ:  // Wire.read
       //   val = Wire.read();
       //   server.write(0x36);    // could be (action)
       //   server.write(val);
       //   break;
 
-      case msg_servoWrite:
+      case SERVO_WRITE:
         pin = cached[1];
         val = cached[2];
         #ifdef DEBUG
@@ -681,7 +686,6 @@ void processInput() {
         break;
     } // <-- This is the end of the switch
 
-
     // Clear the cached bytes
     for (i = 0; i < bytesExpecting; i++) {
       cached[i] = 0;
@@ -692,22 +696,20 @@ void processInput() {
     hasAction = false;
     bytesExpecting = 0;
 
-
-    #ifdef DEBUG
-    Serial.print("Leftovers: ");
-    Serial.println(bytesRead, DEC);
-    #endif
-
     // If there were leftover bytes available,
     // call processInput. This mechanism will continue
     // until there are no bytes available.
     if (bytesRead > 0) {
+      #ifdef DEBUG
+      Serial.print("# Unprocessed Bytes: ");
+      Serial.println(bytesRead, DEC);
+      #endif
+
       available = bytesRead;
       processInput();
     }
   }
 }
-
 
 void loop() {
   if (client.connected()) {
@@ -722,8 +724,8 @@ void loop() {
 
     // Process incoming bytes first
     available = client.available();
-    if (available > 0) {
 
+    if (available > 0) {
       // Move all available bytes into the buffer,
       // this avoids building up back pressure in
       // the client byte stream.
@@ -739,16 +741,18 @@ void loop() {
       processInput();
     }
 
-    // Reporting should be limited to every ~100ms
+    // Reporting must be limited to every ~100ms
+    // Otherwise the spark becomes unreliable and
+    // exhibits a higher crash frequency.
     nowms = millis();
     if (nowms - lastms > sampleInterval && reporters > 0) {
+      // possible just assign the value of nowms?
       lastms += sampleInterval;
       report();
     }
   } else {
-    // Upon disconnection, reset the state
+    // Upon disconnection, reset all state.
     if (isConnected) {
-      isConnected = false;
       reset();
     }
 
