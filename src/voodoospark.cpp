@@ -312,7 +312,7 @@ void setup() {
   Serial.begin(115200);
   #endif
 
-  IPAddress myIp = Network.localIP();
+  IPAddress myIp = WiFi.localIP();
   static char myIpString[24] = "";
   char octet[5];
   itoa(myIp[0],octet,10); strcat(myIpString,octet); strcat(myIpString,".");
