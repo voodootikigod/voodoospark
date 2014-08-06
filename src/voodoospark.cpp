@@ -266,17 +266,16 @@ void reset() {
   Serial.println("RESETTING");
   #endif
 
+  hasAction = false;
   isConnected = false;
 
-  // Clear inbound data tracking values
-  bytesExpecting = 0;
-  bytesRead = 0;
-  hasAction = false;
   reporters = 0;
+  bytesRead = 0;
+  bytesExpecting = 0;
 
-  // Clear time tracking values
   lastms = 0;
   nowms = 0;
+  sampleInterval = 100;
 
   for (int i = 0; i < 20; i++) {
     // Clear the pin reporting list
