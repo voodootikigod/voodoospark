@@ -310,7 +310,7 @@ void setup() {
   Serial.begin(115200);
   #endif
 
-  IPAddress ip = Network.localIP();
+  IPAddress ip = WiFi.localIP();
   static char ipAddress[24] = "";
   char octet[5];
 
