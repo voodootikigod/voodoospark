@@ -9,7 +9,7 @@ The VoodooSpark uses the [Spark Cloud](http://docs.spark.io/#/start/wait-what-is
 With your Spark device connected to a Wifi network and has already gone through the ["claim"/ownership process](http://docs.spark.io/#/start/step-1-power-the-core):
 
 1.  Open the [Spark.io Editor](https://www.spark.io/build) with the credentials used when going through the claiming process.
-2.  Copy and paste the entire contents of [src/voodoospark.cpp](https://raw.githubusercontent.com/voodootikigod/voodoospark/master/src/voodoospark.cpp) into the editor window.
+2.  Copy and paste the entire contents of [firmware/voodoospark.cpp](https://raw.githubusercontent.com/voodootikigod/voodoospark/master/firmware/voodoospark.cpp) into the editor window.
 3.  Click "Verify"
 4.  Click "Flash"
 5.  Once the flashing process is complete, close the Spark.io Editor.
@@ -20,7 +20,7 @@ Alternately, the firmware may be loaded using the Spark CLI ([spark-cli](https:/
 ``` bash
 npm install -g spark-cli
 spark cloud login
-spark cloud flash SPARK_DEVICE_ID src/voodoospark.cpp
+spark cloud flash SPARK_DEVICE_ID firmware/voodoospark.cpp
 ```
 
 

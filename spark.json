@@ -1,0 +1,7 @@
+{
+  "name": "voodoospark",
+  "author": "Chris Williams <voodootikigod@gmail.com>",
+  "license": "MIT",
+  "version": "2.4.0",
+  "description": "Exposes the firmware level API through a local TCP Connection initiated to the spark device"
+}
