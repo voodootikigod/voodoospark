@@ -329,9 +329,9 @@ void processInput() {
   #ifdef DEBUG
   Serial.println("----------processInput----------");
   Serial.print("Bytes Available: ");
-  Serial.println(available, DEC);
+  Serial.println(bytesRead, DEC);
 
-  for (i = 0; i < available; i++) {
+  for (i = 0; i < bytesRead; i++) {
     Serial.print(i, DEC);
     Serial.print(": ");
     Serial.println(buffer[i], DEC);
@@ -728,9 +728,8 @@ void loop() {
       // Move all available bytes into the buffer,
       // this avoids building up back pressure in
       // the client byte stream.
-      for (int i = 0; i < available; i++) {
-        buffer[i] = client.read();
-        bytesRead++;
+      for (int i = 0; i < available && i < 16-bytesRead; i++) {
+        buffer[bytesRead++] = client.read();
       }
 
       #ifdef DEBUG
