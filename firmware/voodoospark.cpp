@@ -294,15 +294,13 @@ void processInput() {
   int byteCount = bytesRead;
 
   #ifdef DEBUG
-  Serial.println("----------processInput----------");
-  Serial.print("Bytes Available: ");
-  Serial.println(bytesRead, DEC);
+  Serial.println("--------------PROCESSING");
 
-  for (i = 0; i < bytesRead; i++) {
-    Serial.print(i, DEC);
-    Serial.print(": ");
-    Serial.println(buffer[i], DEC);
-  }
+  // for (i = 0; i < bytesRead; i++) {
+  //   Serial.print(i, DEC);
+  //   Serial.print(": ");
+  //   Serial.println(buffer[i], DEC);
+  // }
   #endif
 
   // Only check if buffer[0] is possibly an action
@@ -312,15 +310,15 @@ void processInput() {
       action = buffer[0];
       bytesExpecting = bytesToExpectByAction[action] + 1;
       hasAction = true;
+
+      #ifdef DEBUG
+      Serial.print("Bytes Read: ");
+      Serial.println(bytesRead, DEC);
+      Serial.print("Bytes Using: ");
+      Serial.println(bytesExpecting, DEC);
+      #endif
     }
   }
-
-  #ifdef DEBUG
-  Serial.print("Bytes Expecting: ");
-  Serial.println(bytesExpecting, DEC);
-  Serial.print("Bytes Read: ");
-  Serial.println(bytesRead, DEC);
-  #endif
 
   // When the first byte of buffer is an action and
   // enough bytes are read, begin processing the action.
@@ -343,11 +341,10 @@ void processInput() {
         // Reduce the bytesRead by the number of bytes "taken"
         bytesRead--;
 
-        #ifdef DEBUG
-        Serial.print("Cached: ");
-        Serial.print(k, DEC);
-        Serial.println(cached[k], DEC);
-        #endif
+        // #ifdef DEBUG
+        // Serial.print("Cached: ");
+        // Serial.println(cached[k], DEC);
+        // #endif
       }
 
       // Shift the unused buffer to the front
@@ -360,9 +357,9 @@ void processInput() {
         pin = cached[1];
         mode = cached[2];
         #ifdef DEBUG
-        Serial.print("PIN received: ");
+        Serial.print("PIN: ");
         Serial.println(pin);
-        Serial.print("MODE received: ");
+        Serial.print("MODE: ");
         Serial.println(mode, HEX);
         #endif
 
@@ -388,9 +385,9 @@ void processInput() {
         pin = cached[1];
         val = cached[2];
         #ifdef DEBUG
-        Serial.print("PIN received: ");
+        Serial.print("PIN: ");
         Serial.println(pin, DEC);
-        Serial.print("VALUE received: ");
+        Serial.print("VALUE: ");
         Serial.println(val, HEX);
         #endif
         digitalWrite(pin, val);
@@ -400,9 +397,9 @@ void processInput() {
         pin = cached[1];
         val = cached[2];
         #ifdef DEBUG
-        Serial.print("PIN received: ");
+        Serial.print("PIN: ");
         Serial.println(pin, DEC);
-        Serial.print("VALUE received: ");
+        Serial.print("VALUE: ");
         Serial.println(val, HEX);
         #endif
         analogWrite(pin, val);
@@ -412,9 +409,9 @@ void processInput() {
         pin = cached[1];
         val = digitalRead(pin);
         #ifdef DEBUG
-        Serial.print("PIN received: ");
+        Serial.print("PIN: ");
         Serial.println(pin, DEC);
-        Serial.print("VALUE sent: ");
+        Serial.print("VALUE: ");
         Serial.println(val, HEX);
         #endif
         send(0x03, pin, val);
@@ -424,9 +421,9 @@ void processInput() {
         pin = cached[1];
         val = analogRead(pin);
         #ifdef DEBUG
-        Serial.print("PIN received: ");
+        Serial.print("PIN: ");
         Serial.println(pin, DEC);
-        Serial.print("VALUE sent: ");
+        Serial.print("VALUE: ");
         Serial.println(val, HEX);
         #endif
         send(0x04, pin, val);
@@ -662,12 +659,10 @@ void processInput() {
     // call processInput. This mechanism will continue
     // until there are no bytes available.
     if (bytesRead > 0) {
-      #ifdef DEBUG
-      Serial.print("# Unprocessed Bytes: ");
-      Serial.println(bytesRead, DEC);
-      #endif
-
-      available = bytesRead;
+      // #ifdef DEBUG
+      // Serial.print("# Unprocessed Bytes: ");
+      // Serial.println(bytesRead, DEC);
+      // #endif
       processInput();
     }
   }
@@ -679,7 +674,7 @@ void loop() {
     if (!isConnected) {
       restore();
       #ifdef DEBUG
-      Serial.println("--------------CONNECTED--------------");
+      Serial.println("--------------CONNECTED");
       #endif
     }
 
@@ -689,6 +684,10 @@ void loop() {
     available = client.available();
 
     if (available > 0) {
+      #ifdef DEBUG
+      Serial.println("--------------BUFFERING AVAILABLE BYTES");
+      #endif
+
       // Move all available bytes into the buffer,
       // this avoids building up back pressure in
       // the client byte stream.
@@ -697,11 +696,13 @@ void loop() {
       }
 
       #ifdef DEBUG
-      Serial.println("--------------PROCESSING NEW DATA--------------");
+      Serial.print("BUFFERED: ");
+      Serial.println(bytesRead, DEC);
       #endif
 
       processInput();
     }
+
 
     // Reporting must be limited to every ~100ms
     // Otherwise the spark becomes unreliable and
