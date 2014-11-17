@@ -227,6 +227,7 @@ void report() {
               #ifdef DEBUG
               Serial.print("Analog Report (pin, adc): ");
               Serial.print(i, DEC);
+              Serial.print(" ");
               Serial.println(adc, DEC);
               #endif
               send(ANALOG_READ, i, adc);
@@ -238,9 +239,9 @@ void report() {
   }
 }
 
-void reset() {
+void restore() {
   #ifdef DEBUG
-  Serial.println("RESETTING");
+  Serial.println("--------------RESTORING");
   #endif
 
   hasAction = false;
@@ -254,25 +255,13 @@ void reset() {
   nowms = 0;
   sampleInterval = 100;
 
-  for (int i = 0; i < 20; i++) {
-    // Clear the pin reporting list
-    reporting[i] = 0;
+  memset(&buffer[0], 0, MAX_DATA_BYTES);
+  memset(&cached[0], 0, 4);
+  memset(&reporting[0], 0, 20);
 
-    // Clear the incoming buffer
-    if (i < 16) {
-      buffer[i] = 0;
-    }
-
-    // Clear the action data cache
-    if (i < 4) {
-      cached[i] = 0;
-    }
-
-    // Detach any attached servos
-    if (i < 8) {
-      if (servos[i].attached()) {
-        servos[i].detach();
-      }
+  for (int i = 0; i < 8; i++) {
+    if (servos[i].attached()) {
+      servos[i].detach();
     }
   }
 }
@@ -662,10 +651,7 @@ void processInput() {
         break;
     } // <-- This is the end of the switch
 
-    // Clear the cached bytes
-    for (i = 0; i < bytesExpecting; i++) {
-      cached[i] = 0;
-    }
+    memset(&cached[0], 0, 4);
 
     // Reset hasAction flag (no longer needed for this opertion)
     // action and byte read expectation flags
@@ -691,6 +677,7 @@ void loop() {
   if (client.connected()) {
 
     if (!isConnected) {
+      restore();
       #ifdef DEBUG
       Serial.println("--------------CONNECTED--------------");
       #endif
@@ -726,9 +713,9 @@ void loop() {
       report();
     }
   } else {
-    // Upon disconnection, reset all state.
+    // Upon disconnection, restore init state.
     if (isConnected) {
-      reset();
+      restore();
     }
 
     // If no client is yet connected, check for a new connection
