@@ -309,8 +309,9 @@ void processInput() {
   // when there is no action in progress.
   if (hasAction == false) {
     if (buffer[0] < ACTION_RANGE) {
-      hasAction = true;
+      action = buffer[0];
       bytesExpecting = bytesToExpectByAction[action] + 1;
+      hasAction = true;
     }
   }
 
@@ -325,10 +326,8 @@ void processInput() {
   // enough bytes are read, begin processing the action.
   if (hasAction && bytesRead >= bytesExpecting) {
 
-    action = buffer[0];
-
     #ifdef DEBUG
-    Serial.print("Action received: ");
+    Serial.print("ACTION: ");
     Serial.println(action, DEC);
     #endif
 
