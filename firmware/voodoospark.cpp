@@ -15,6 +15,7 @@ extern char* itoa(int a, char* buffer, unsigned char radix);
 
 #define DEBUG 0
 #define PORT 48879
+#define MAX_DATA_BYTES 64
 
 // table of action codes
 // to do: make this an enum?
@@ -138,9 +139,9 @@ TCPClient client;
 bool hasAction = false;
 bool isConnected = false;
 
-byte reporting[20];
-byte buffer[16];
+byte buffer[MAX_DATA_BYTES];
 byte cached[4];
+byte reporting[20];
 
 int reporters = 0;
 int bytesRead = 0;
@@ -692,7 +693,7 @@ void loop() {
       // Move all available bytes into the buffer,
       // this avoids building up back pressure in
       // the client byte stream.
-      for (int i = 0; i < available && i < 16-bytesRead; i++) {
+      for (int i = 0; i < available && i < MAX_DATA_BYTES - bytesRead; i++) {
         buffer[bytesRead++] = client.read();
       }
 
