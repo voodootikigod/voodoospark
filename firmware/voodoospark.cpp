@@ -61,7 +61,7 @@ uint8_t bytesToExpectByAction[] = {
   1,    // DIGITAL_READ
   1,    // ANALOG_READ
   2,    // REPORTING
-  1,    // SET_SAMPLE_INTERVAL
+  2,    // SET_SAMPLE_INTERVAL
   // gap from 0x07-0x0f
   0,    // 0x07
   0,    // 0x08
@@ -442,7 +442,12 @@ void processInput() {
         break;
 
       case SET_SAMPLE_INTERVAL: // set the sampling interval in ms
-        sampleInterval = cached[1];
+        sampleInterval = cached[1] + (cached[2] << 7);
+
+        #ifdef DEBUG
+        Serial.print("SET_SAMPLE_INTERVAL: ");
+        Serial.println(sampleInterval, DEC);
+        #endif
 
         // Lower than ~100ms will likely crash the spark,
         // but
