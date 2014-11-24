@@ -434,9 +434,10 @@ void processInput() {
         pin = cached[1];
         val = cached[2];
         #ifdef DEBUG
-        Serial.print("READ: ");
+        Serial.print("REPORTING: ");
         Serial.print(pin, DEC);
-        Serial.println(val, HEX);
+        Serial.print(", ");
+        Serial.println(val, DEC);
         #endif
         reporting[pin] = val;
         break;
