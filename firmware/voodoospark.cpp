@@ -13,7 +13,7 @@
 // allow use of itoa() in this scope
 extern char* itoa(int a, char* buffer, unsigned char radix);
 
-#define DEBUG 0
+#define DEBUG 1
 #define PORT 48879
 #define MAX_DATA_BYTES 64
 
@@ -193,7 +193,7 @@ void send(int action, int pin, int value) {
   // Send the MSB
   server.write(msb);
 
-  // #ifdef DEBUG
+  // #if DEBUG
   // Serial.print("SENT: ");
   // Serial.print(value);
   // Serial.print(" -> [ ");
@@ -208,11 +208,11 @@ void report() {
   if (isConnected) {
     for (int i = 0; i < 20; i++) {
       if (reporting[i]) {
-        #ifdef DEBUG
-        Serial.print("Reporting: ");
-        Serial.print(i, DEC);
-        Serial.println(reporting[i], DEC);
-        #endif
+        // #if DEBUG
+        // Serial.print("Reporting: ");
+        // Serial.print(i, DEC);
+        // Serial.println(reporting[i], DEC);
+        // #endif
 
         int dr = (reporting[i] & 1);
         int ar = (reporting[i] & 2);
@@ -225,12 +225,12 @@ void report() {
           } else {
             if (ar) {
               int adc = analogRead(i);
-              #ifdef DEBUG
-              Serial.print("Analog Report (pin, adc): ");
-              Serial.print(i, DEC);
-              Serial.print(" ");
-              Serial.println(adc, DEC);
-              #endif
+              // #if DEBUG
+              // Serial.print("Analog Report (pin, adc): ");
+              // Serial.print(i, DEC);
+              // Serial.print(" ");
+              // Serial.println(adc, DEC);
+              // #endif
               send(ANALOG_READ, i, adc);
             }
           }
@@ -241,7 +241,7 @@ void report() {
 }
 
 void restore() {
-  #ifdef DEBUG
+  #if DEBUG
   Serial.println("--------------RESTORING");
   #endif
 
@@ -272,7 +272,7 @@ void setup() {
   server.begin();
   netapp_ipconfig(&ip_config);
 
-  #ifdef DEBUG
+  #if DEBUG
   Serial.begin(115200);
   #endif
 
@@ -293,7 +293,7 @@ void processInput() {
   int pin, mode, val, type, speed, address, stop, len, k, i;
   int byteCount = bytesRead;
 
-  #ifdef DEBUG
+  #if DEBUG
   Serial.println("--------------PROCESSING");
 
   // for (i = 0; i < bytesRead; i++) {
@@ -311,7 +311,7 @@ void processInput() {
       bytesExpecting = bytesToExpectByAction[action] + 1;
       hasAction = true;
 
-      #ifdef DEBUG
+      #if DEBUG
       Serial.print("Bytes Read: ");
       Serial.println(bytesRead, DEC);
       Serial.print("Bytes Using: ");
@@ -324,7 +324,7 @@ void processInput() {
   // enough bytes are read, begin processing the action.
   if (hasAction && bytesRead >= bytesExpecting) {
 
-    #ifdef DEBUG
+    #if DEBUG
     Serial.print("ACTION: ");
     Serial.println(action, DEC);
     #endif
@@ -341,7 +341,7 @@ void processInput() {
         // Reduce the bytesRead by the number of bytes "taken"
         bytesRead--;
 
-        // #ifdef DEBUG
+        // #if DEBUG
         // Serial.print("Cached: ");
         // Serial.println(cached[k], DEC);
         // #endif
@@ -356,7 +356,7 @@ void processInput() {
       case PIN_MODE:  // pinMode
         pin = cached[1];
         mode = cached[2];
-        #ifdef DEBUG
+        #if DEBUG
         Serial.print("PIN: ");
         Serial.println(pin);
         Serial.print("MODE: ");
@@ -391,7 +391,7 @@ void processInput() {
       case DIGITAL_WRITE:  // digitalWrite
         pin = cached[1];
         val = cached[2];
-        #ifdef DEBUG
+        #if DEBUG
         Serial.print("PIN: ");
         Serial.println(pin, DEC);
         Serial.print("VALUE: ");
@@ -403,7 +403,7 @@ void processInput() {
       case ANALOG_WRITE:  // analogWrite
         pin = cached[1];
         val = cached[2];
-        #ifdef DEBUG
+        #if DEBUG
         Serial.print("PIN: ");
         Serial.println(pin, DEC);
         Serial.print("VALUE: ");
@@ -415,7 +415,7 @@ void processInput() {
       case DIGITAL_READ:  // digitalRead
         pin = cached[1];
         val = digitalRead(pin);
-        #ifdef DEBUG
+        #if DEBUG
         Serial.print("PIN: ");
         Serial.println(pin, DEC);
         Serial.print("VALUE: ");
@@ -427,7 +427,7 @@ void processInput() {
       case ANALOG_READ:  // analogRead
         pin = cached[1];
         val = analogRead(pin);
-        #ifdef DEBUG
+        #if DEBUG
         Serial.print("PIN: ");
         Serial.println(pin, DEC);
         Serial.print("VALUE: ");
@@ -440,7 +440,7 @@ void processInput() {
         reporters++;
         pin = cached[1];
         val = cached[2];
-        #ifdef DEBUG
+        #if DEBUG
         Serial.print("REPORTING: ");
         Serial.print(pin, DEC);
         Serial.print(", ");
@@ -452,7 +452,7 @@ void processInput() {
       case SET_SAMPLE_INTERVAL: // set the sampling interval in ms
         sampleInterval = cached[1] + (cached[2] << 7);
 
-        #ifdef DEBUG
+        #if DEBUG
         Serial.print("SET_SAMPLE_INTERVAL: ");
         Serial.println(sampleInterval, DEC);
         #endif
@@ -648,7 +648,7 @@ void processInput() {
       case SERVO_WRITE:
         pin = cached[1];
         val = cached[2];
-        #ifdef DEBUG
+        #if DEBUG
         Serial.print("PIN: ");
         Serial.println(pin);
         Serial.print("WRITING TO SERVO: ");
@@ -672,7 +672,7 @@ void processInput() {
     // call processInput. This mechanism will continue
     // until there are no bytes available.
     if (bytesRead > 0) {
-      // #ifdef DEBUG
+      // #if DEBUG
       // Serial.print("# Unprocessed Bytes: ");
       // Serial.println(bytesRead, DEC);
       // #endif
@@ -686,7 +686,7 @@ void loop() {
 
     if (!isConnected) {
       restore();
-      #ifdef DEBUG
+      #if DEBUG
       Serial.println("--------------CONNECTED");
       #endif
     }
@@ -697,7 +697,7 @@ void loop() {
     available = client.available();
 
     if (available > 0) {
-      #ifdef DEBUG
+      #if DEBUG
       Serial.println("--------------BUFFERING AVAILABLE BYTES");
       #endif
 
@@ -708,7 +708,7 @@ void loop() {
         buffer[bytesRead++] = client.read();
       }
 
-      #ifdef DEBUG
+      #if DEBUG
       Serial.print("BUFFERED: ");
       Serial.println(bytesRead, DEC);
       #endif
