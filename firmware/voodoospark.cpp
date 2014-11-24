@@ -367,15 +367,22 @@ void processInput() {
           servos[ToServoIndex(pin)].detach();
         }
 
+        // The following modes were derived
+        // from uses in core-firmware.
         if (mode == 0x00) {
-          pinMode(pin, INPUT);
-        } else if (mode == 0x02) {
-          pinMode(pin, INPUT_PULLUP);
-        } else if (mode == 0x03) {
+          // INPUT
           pinMode(pin, INPUT_PULLDOWN);
         } else if (mode == 0x01) {
+          // OUTPUT
+          pinMode(pin, OUTPUT);
+        } else if (mode == 0x02) {
+          // ANALOG INPUT
+          pinMode(pin, INPUT);
+        } else if (mode == 0x03) {
+          // ANALOG (PWM) OUTPUT
           pinMode(pin, OUTPUT);
         } else if (mode == 0x04) {
+          // SERVO
           pinMode(pin, OUTPUT);
           servos[ToServoIndex(pin)].attach(pin);
         }
