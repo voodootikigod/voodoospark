@@ -133,7 +133,7 @@ byte buffer[MAX_DATA_BYTES];
 byte cached[4];
 byte reporting[20];
 byte pinModeFor[20];
-byte analogReporting[8];
+byte analogReporting[20];
 byte portValues[2];
 
 int reporters = 0;
@@ -251,7 +251,7 @@ void restore() {
   memset(&cached[0], 0, 4);
   memset(&pinModeFor[0], 0, 20);
   memset(&reporting[0], 0, 20);
-  memset(&analogReporting[0], 0, 8);
+  memset(&analogReporting[0], 0, 20);
   memset(&portValues[0], 0, 2);
 
   for (int i = 0; i < 8; i++) {
