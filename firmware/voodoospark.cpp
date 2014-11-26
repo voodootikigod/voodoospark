@@ -189,11 +189,17 @@ void send(int action, int pinOrPort, int pinOrPortValue) {
 
 void report() {
   if (isConnected) {
+
+    #if DEBUG
+    Serial.println("--------------REPORTING");
+    #endif
+
     int pin;
     int pinValue;
     int i;
 
     for (int k = 0; k < 2; k++) {
+      bool shouldSend = false;
       // D0-D7
       // portValues[0] = 0;
       // A0-A7
@@ -204,6 +210,7 @@ void report() {
         pin = (k * 10) + i;
 
         if (reporting[pin] == 1) {
+          shouldSend = true;
           pinValue = digitalRead(pin);
 
           if (pinValue) {
