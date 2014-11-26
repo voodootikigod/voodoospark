@@ -5,7 +5,7 @@ extern char* itoa(int a, char* buffer, unsigned char radix);
 
 #define DEBUG 1
 #define PORT 48879
-#define MAX_DATA_BYTES 64
+#define MAX_DATA_BYTES 128
 
 // table of action codes
 // to do: make this an enum?
