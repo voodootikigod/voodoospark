@@ -179,35 +179,25 @@ int ToServoIndex(int pin) {
 }
 
 void send(int action, int pin, int value) {
+  uint8_t buf[4];
+
   // See https://github.com/voodootikigod/voodoospark/issues/20
   // to understand why the send function splits values
   // into two 7-bit bytes before sending.
-  //
-  int lsb = value & 0x7f;
-  int msb = value >> 0x07 & 0x7f;
 
-  server.write(action);
-  server.write(pin);
+  buf[0] = action;
+  buf[1] = pin;
+  // LSB
+  buf[2] = value & 0x7f;
+  // MSB
+  buf[3] = value >> 0x07 & 0x7f;
 
-  // Send the LSB
-  server.write(lsb);
-  // Send the MSB
-  server.write(msb);
-
-  // #if DEBUG
-  // Serial.print("SENT: ");
-  // Serial.print(value);
-  // Serial.print(" -> [ ");
-  // Serial.print(lsb);
-  // Serial.print(", ");
-  // Serial.print(msb);
-  // Serial.println(" ]");
-  // #endif
+  server.write(buf, 4);
 }
 
 void report() {
   if (isConnected) {
-    for (int i = 0; i < 20; i++) {
+    for (int i = 0; i < 18; i++) {
       if (reporting[i]) {
         // #if DEBUG
         // Serial.print("Reporting: ");
@@ -218,22 +208,23 @@ void report() {
         int dr = (reporting[i] & 1);
         int ar = (reporting[i] & 2);
 
-        if (i < 10 && dr) {
+        if (i < 8 && dr) {
           send(DIGITAL_READ, i, digitalRead(i));
-        } else {
+        }
+
+        if (i > 9) {
           if (dr) {
             send(DIGITAL_READ, i, digitalRead(i));
-          } else {
-            if (ar) {
-              int adc = analogRead(i);
-              // #if DEBUG
-              // Serial.print("Analog Report (pin, adc): ");
-              // Serial.print(i, DEC);
-              // Serial.print(" ");
-              // Serial.println(adc, DEC);
-              // #endif
-              send(ANALOG_READ, i, adc);
-            }
+          }
+          if (ar) {
+            int adc = analogRead(i);
+            #if DEBUG
+            Serial.print("Analog Report (pin, adc): ");
+            Serial.print(i, DEC);
+            Serial.print(" ");
+            Serial.println(adc, DEC);
+            #endif
+            send(ANALOG_READ, i, adc);
           }
         }
       }
