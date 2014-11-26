@@ -142,6 +142,7 @@ bool isConnected = false;
 byte buffer[MAX_DATA_BYTES];
 byte cached[4];
 byte reporting[20];
+byte pinModeFor[20];
 
 int reporters = 0;
 int bytesRead = 0;
@@ -258,12 +259,21 @@ void restore() {
 
   memset(&buffer[0], 0, MAX_DATA_BYTES);
   memset(&cached[0], 0, 4);
+  memset(&pinModeFor[0], 0, 20);
   memset(&reporting[0], 0, 20);
 
   for (int i = 0; i < 8; i++) {
     if (servos[i].attached()) {
       servos[i].detach();
     }
+  }
+
+  for (int i = 0; i < 8; i++) {
+    pinMode(i, OUTPUT);
+    pinMode(i + 10, INPUT);
+
+    pinModeFor[i] = 1;
+    pinModeFor[i + 10] = 0;
   }
 }
 
@@ -363,28 +373,38 @@ void processInput() {
         Serial.println(mode, HEX);
         #endif
 
-        if (servos[ToServoIndex(pin)].attached()) {
-          servos[ToServoIndex(pin)].detach();
-        }
 
-        // The following modes were derived
-        // from uses in core-firmware.
-        if (mode == 0x00) {
-          // INPUT
-          pinMode(pin, INPUT_PULLDOWN);
-        } else if (mode == 0x01) {
-          // OUTPUT
-          pinMode(pin, OUTPUT);
-        } else if (mode == 0x02) {
-          // ANALOG INPUT
-          pinMode(pin, INPUT);
-        } else if (mode == 0x03) {
-          // ANALOG (PWM) OUTPUT
-          pinMode(pin, OUTPUT);
-        } else if (mode == 0x04) {
-          // SERVO
-          pinMode(pin, OUTPUT);
-          servos[ToServoIndex(pin)].attach(pin);
+        if (pinModeFor[pin] != mode) {
+
+          if (pinModeFor[pin] == 0x04) {
+            servos[ToServoIndex(pin)].detach();
+          }
+
+          pinModeFor[pin] = mode;
+
+          // The following modes were derived
+          // from uses in core-firmware.
+          if (mode == 0x00) {
+            // INPUT
+            pinMode(pin, INPUT_PULLDOWN);
+          }
+          if (mode == 0x01) {
+            // OUTPUT
+            pinMode(pin, OUTPUT);
+          }
+          if (mode == 0x02) {
+            // ANALOG INPUT
+            pinMode(pin, INPUT);
+          }
+          if (mode == 0x03) {
+            // ANALOG (PWM) OUTPUT
+            pinMode(pin, OUTPUT);
+          }
+          if (mode == 0x04) {
+            // SERVO
+            pinMode(pin, OUTPUT);
+            servos[ToServoIndex(pin)].attach(pin);
+          }
         }
         break;
 
