@@ -324,8 +324,11 @@ void processInput() {
       #if DEBUG
       Serial.print("Bytes Read: ");
       Serial.println(bytesRead, DEC);
-      Serial.print("Bytes Using: ");
+      Serial.print("Bytes Consumed: ");
       Serial.println(bytesExpecting, DEC);
+      Serial.print("Bytes Remaining: ");
+      Serial.println(bytesRead - bytesExpecting, DEC);
+
       #endif
     }
   }
@@ -729,7 +732,7 @@ void loop() {
       }
 
       #if DEBUG
-      Serial.print("BUFFERED: ");
+      Serial.print("Bytes Buffered: ");
       Serial.println(bytesRead, DEC);
       #endif
 
