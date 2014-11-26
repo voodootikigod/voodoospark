@@ -688,20 +688,34 @@ void processInput() {
 
     memset(&cached[0], 0, 4);
 
+
+    #if DEBUG
+    Serial.print("Unprocessed Bytes: ");
+    Serial.println(byteCount, DEC);
+    #endif
+
+
     // Reset hasAction flag (no longer needed for this opertion)
     // action and byte read expectation flags
     hasAction = false;
     bytesExpecting = 0;
 
     // If there were leftover bytes available,
-    // call processInput. This mechanism will continue
-    // until there are no bytes available.
-    if (bytesRead > 0) {
-      // #if DEBUG
-      // Serial.print("# Unprocessed Bytes: ");
-      // Serial.println(bytesRead, DEC);
-      // #endif
+    // call processInput. This mechanism will
+    // continue until the buffer is exhausted.
+
+    bytesRead = byteCount;
+
+    if (byteCount > 2) {
+      #if DEBUG
+      Serial.println("Calling processInput ");
+      #endif
+
       processInput();
+    } else {
+      #if DEBUG
+      Serial.println("RETURN TO LOOP!");
+      #endif
     }
   }
 }
@@ -722,8 +736,13 @@ void loop() {
     available = client.available();
 
     if (available > 0) {
+
+      int received = 0;
+
       #if DEBUG
       Serial.println("--------------BUFFERING AVAILABLE BYTES");
+      Serial.print("Byte Offset: ");
+      Serial.println(bytesRead, DEC);
       #endif
 
       // Move all available bytes into the buffer,
@@ -731,11 +750,22 @@ void loop() {
       // the client byte stream.
       for (int i = 0; i < available && i < MAX_DATA_BYTES - bytesRead; i++) {
         buffer[bytesRead++] = client.read();
+        received++;
       }
 
       #if DEBUG
-      Serial.print("Bytes Buffered: ");
+      Serial.print("Bytes Received: ");
+      Serial.println(received, DEC);
+
+      Serial.print("Bytes In Buffer: ");
       Serial.println(bytesRead, DEC);
+
+      for (int i = 0; i < bytesRead; i++) {
+        Serial.print("[");
+        Serial.print(i, DEC);
+        Serial.print("] ");
+        Serial.println(buffer[i], DEC);
+      }
       #endif
 
       processInput();
