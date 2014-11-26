@@ -212,18 +212,28 @@ void report() {
         }
       }
 
-      #if DEBUG
-      Serial.print("Reporting: ");
-      Serial.print(k, DEC);
-      Serial.println(portValues[k], DEC);
-      #endif
+      if (shouldSend) {
+        #if DEBUG
+        Serial.print("Reporting: ");
+        Serial.print(k, DEC);
+        Serial.println(portValues[k], DEC);
+        #endif
 
-      send(REPORTING, k, portValues[k]);
+        send(REPORTING, k, portValues[k]);
+      }
     }
 
     for (i = 10; i < 18; i++) {
       if (analogReporting[i] == 1) {
         int adc = analogRead(i);
+
+        #if DEBUG
+        Serial.print("Analog Reporting: ");
+        Serial.print(i, DEC);
+        Serial.print(": ");
+        Serial.println(adc, DEC);
+        #endif
+
         send(ANALOG_READ, i, adc);
         delay(1);
       }
@@ -298,12 +308,6 @@ void processInput() {
 
   #if DEBUG
   Serial.println("--------------PROCESSING");
-
-  // for (i = 0; i < bytesRead; i++) {
-  //   Serial.print(i, DEC);
-  //   Serial.print(": ");
-  //   Serial.println(buffer[i], DEC);
-  // }
   #endif
 
   // Only check if buffer[0] is possibly an action
@@ -317,24 +321,27 @@ void processInput() {
       #if DEBUG
       Serial.print("Bytes Read: ");
       Serial.println(bytesRead, DEC);
-      Serial.print("Bytes Consumed: ");
+      Serial.print("Bytes Required: ");
       Serial.println(bytesExpecting, DEC);
       Serial.print("Bytes Remaining: ");
       Serial.println(bytesRead - bytesExpecting, DEC);
-
       #endif
     }
+  }
+
+  if ((bytesRead - bytesExpecting) < 0) {
+    hasAction = false;
+    bytesExpecting = 0;
+
+    #if DEBUG
+    Serial.println("Not Enough Bytes.");
+    #endif
+    return;
   }
 
   // When the first byte of buffer is an action and
   // enough bytes are read, begin processing the action.
   if (hasAction && bytesRead >= bytesExpecting) {
-
-    #if DEBUG
-    Serial.print("ACTION: ");
-    Serial.println(action, DEC);
-    #endif
-
 
     // Copy the expected bytes into the cache and shift
     // the unused bytes to the beginning of the buffer
@@ -343,9 +350,6 @@ void processInput() {
       // this action.
       if (k < bytesExpecting) {
         cached[k] = buffer[k];
-
-        // Reduce the bytesRead by the number of bytes "taken"
-        bytesRead--;
 
         // #if DEBUG
         // Serial.print("Cached: ");
@@ -356,6 +360,13 @@ void processInput() {
       // Shift the unused buffer to the front
       buffer[k] = buffer[k + bytesExpecting];
     }
+
+    byteCount -= bytesExpecting;
+
+    #if DEBUG
+    Serial.print("ACTION: ");
+    Serial.println(action, DEC);
+    #endif
 
     // Proceed with action processing
     switch (action) {
@@ -457,9 +468,9 @@ void processInput() {
         val = cached[2];
 
         #if DEBUG
-        Serial.print("REPORTING: ");
-        Serial.print(pin, DEC);
-        Serial.print(", ");
+        Serial.print("PIN: ");
+        Serial.println(pin, DEC);
+        Serial.print("TYPE: ");
         Serial.println(val, DEC);
         #endif
 
@@ -478,7 +489,7 @@ void processInput() {
         sampleInterval = cached[1] + (cached[2] << 7);
 
         #if DEBUG
-        Serial.print("SET_SAMPLE_INTERVAL: ");
+        Serial.print("SET_SAMPLE_INTERVAL (2 bytes): ");
         Serial.println(sampleInterval, DEC);
         #endif
 
