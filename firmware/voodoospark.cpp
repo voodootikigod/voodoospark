@@ -1,13 +1,3 @@
-/**
-  ******************************************************************************
-  * @file    voodoospark.cpp
-  * @author  Chris Williams
-  * @version V2.5.1-pre
-  * @date    16-Nov-2014
-  * @brief   Exposes the firmware level API through a TCP Connection initiated
-  *          to the spark device
-  ******************************************************************************
-  */
 #include "application.h"
 
 // allow use of itoa() in this scope
