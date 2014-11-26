@@ -2,7 +2,7 @@
   ******************************************************************************
   * @file    voodoospark.cpp
   * @author  Chris Williams
-  * @version V2.5.0
+  * @version V2.5.1-pre
   * @date    16-Nov-2014
   * @brief   Exposes the firmware level API through a TCP Connection initiated
   *          to the spark device
@@ -143,6 +143,8 @@ byte buffer[MAX_DATA_BYTES];
 byte cached[4];
 byte reporting[20];
 byte pinModeFor[20];
+byte analogReporting[8];
+byte portValues[2];
 
 int reporters = 0;
 int bytesRead = 0;
@@ -178,7 +180,7 @@ int ToServoIndex(int pin) {
   if (pin >= 14) return pin - 10;
 }
 
-void send(int action, int pin, int value) {
+void send(int action, int pinOrPort, int pinOrPortValue) {
   uint8_t buf[4];
 
   // See https://github.com/voodootikigod/voodoospark/issues/20
@@ -186,47 +188,54 @@ void send(int action, int pin, int value) {
   // into two 7-bit bytes before sending.
 
   buf[0] = action;
-  buf[1] = pin;
+  buf[1] = pinOrPort;
   // LSB
-  buf[2] = value & 0x7f;
+  buf[2] = pinOrPortValue & 0x7f;
   // MSB
-  buf[3] = value >> 0x07 & 0x7f;
+  buf[3] = pinOrPortValue >> 0x07 & 0x7f;
 
   server.write(buf, 4);
 }
 
 void report() {
   if (isConnected) {
-    for (int i = 0; i < 18; i++) {
-      if (reporting[i]) {
-        // #if DEBUG
-        // Serial.print("Reporting: ");
-        // Serial.print(i, DEC);
-        // Serial.println(reporting[i], DEC);
-        // #endif
+    int pin;
+    int pinValue;
+    int i;
 
-        int dr = (reporting[i] & 1);
-        int ar = (reporting[i] & 2);
+    for (int k = 0; k < 2; k++) {
+      // D0-D7
+      // portValues[0] = 0;
+      // A0-A7
+      // portValues[1] = 0;
+      portValues[k] = 0;
 
-        if (i < 8 && dr) {
-          send(DIGITAL_READ, i, digitalRead(i));
-        }
+      for (i = 0; i < 8; i++) {
+        pin = (k * 10) + i;
 
-        if (i > 9) {
-          if (dr) {
-            send(DIGITAL_READ, i, digitalRead(i));
-          }
-          if (ar) {
-            int adc = analogRead(i);
-            #if DEBUG
-            Serial.print("Analog Report (pin, adc): ");
-            Serial.print(i, DEC);
-            Serial.print(" ");
-            Serial.println(adc, DEC);
-            #endif
-            send(ANALOG_READ, i, adc);
+        if (reporting[pin] == 1) {
+          pinValue = digitalRead(pin);
+
+          if (pinValue) {
+            portValues[k] = (portValues[k] | pinValue) << i;
           }
         }
+      }
+
+      #if DEBUG
+      Serial.print("Reporting: ");
+      Serial.print(k, DEC);
+      Serial.println(portValues[k], DEC);
+      #endif
+
+      send(REPORTING, k, portValues[k]);
+    }
+
+    for (i = 10; i < 18; i++) {
+      if (analogReporting[i] == 1) {
+        int adc = analogRead(i);
+        send(ANALOG_READ, i, adc);
+        delay(1);
       }
     }
   }
@@ -252,6 +261,8 @@ void restore() {
   memset(&cached[0], 0, 4);
   memset(&pinModeFor[0], 0, 20);
   memset(&reporting[0], 0, 20);
+  memset(&analogReporting[0], 0, 8);
+  memset(&portValues[0], 0, 2);
 
   for (int i = 0; i < 8; i++) {
     if (servos[i].attached()) {
@@ -259,6 +270,7 @@ void restore() {
     }
   }
 
+  // Restore defaults.
   for (int i = 0; i < 8; i++) {
     pinMode(i, OUTPUT);
     pinMode(i + 10, INPUT);
@@ -451,16 +463,25 @@ void processInput() {
         break;
 
       case REPORTING: // Add pin to
-        reporters++;
         pin = cached[1];
         val = cached[2];
+
         #if DEBUG
         Serial.print("REPORTING: ");
         Serial.print(pin, DEC);
         Serial.print(", ");
         Serial.println(val, DEC);
         #endif
-        reporting[pin] = val;
+
+        if (analogReporting[pin] == 0 || reporting[pin] == 0) {
+          reporters++;
+        }
+
+        if (val == 2) {
+          analogReporting[pin] = 1;
+        } else {
+          reporting[pin] = 1;
+        }
         break;
 
       case SET_SAMPLE_INTERVAL: // set the sampling interval in ms
