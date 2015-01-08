@@ -77,7 +77,8 @@ For screen this command will look like:
 
 ## Reference Implementations
 
-*   [Spark-io _node.js_](http://github.com/rwaldron/spark-io)
+*   [Spark-io _node.js_](https://github.com/rwaldron/spark-io)
+*   [Vspark _Go_](https://github.com/audreylim/vspark)
 
 ## License
 See [LICENSE](https://github.com/voodootikigod/voodoospark/blob/master/LICENSE-MIT) file.
