@@ -16,6 +16,7 @@ extern char* itoa(int a, char* buffer, unsigned char radix);
 #define ANALOG_READ                 0x04
 #define REPORTING                   0x05
 #define SET_SAMPLE_INTERVAL         0x06
+#define INTERNAL_RGB                0x07
 /* NOTE GAP */
 // #define SERIAL_BEGIN                0x10
 // #define SERIAL_END                  0x11
@@ -52,8 +53,8 @@ uint8_t bytesToExpectByAction[] = {
   1,    // ANALOG_READ
   2,    // REPORTING
   2,    // SET_SAMPLE_INTERVAL
-  // gap from 0x07-0x0f
-  0,    // 0x07
+  3,    // INTERNAL_RGB
+  // gap from 0x08-0x0f
   0,    // 0x08
   0,    // 0x09
   0,    // 0x0a
@@ -698,6 +699,26 @@ void processInput() {
         Serial.println(val);
         #endif
         servos[ToServoIndex(pin)].write(val);
+        break;
+
+      case INTERNAL_RGB:
+        byte red;
+        byte green;
+        byte blue;
+        red = cached[1];
+        green = cached[2];
+        blue = cached[3];
+        #if DEBUG
+        Serial.println("WRITING TO INTERNAL RGB LED.");
+        Serial.print("Red: ");
+        Serial.println(red);
+        Serial.print("Green: ");
+        Serial.println(green);
+        Serial.print("Blue: ");
+        Serial.println(blue);
+        #endif
+        RGB.control(true);
+        RGB.color(red, green, blue);
         break;
 
       default: // noop
