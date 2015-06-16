@@ -1,8 +1,5 @@
 #include "application.h"
 
-// allow use of itoa() in this scope
-extern char* itoa(int a, char* buffer, unsigned char radix);
-
 #define DEBUG 1
 #define PORT 48879
 #define MAX_DATA_BYTES 128
@@ -291,7 +288,6 @@ void restore() {
 void setup() {
 
   server.begin();
-  netapp_ipconfig(&ip_config);
 
   #if DEBUG
   Serial.begin(115200);
@@ -299,13 +295,9 @@ void setup() {
 
   IPAddress ip = WiFi.localIP();
   static char ipAddress[24] = "";
-  char octet[5];
 
-  itoa(ip[0], octet, 10); strcat(ipAddress, octet); strcat(ipAddress, ".");
-  itoa(ip[1], octet, 10); strcat(ipAddress, octet); strcat(ipAddress, ".");
-  itoa(ip[2], octet, 10); strcat(ipAddress, octet); strcat(ipAddress, ".");
-  itoa(ip[3], octet, 10); strcat(ipAddress, octet); strcat(ipAddress, ":");
-  itoa(PORT, octet, 10);  strcat(ipAddress, octet);
+  // https://community.particle.io/t/network-localip-to-string-to-get-it-via-spark-variable/2581/5
+  sprintf(ipAddress, "%d.%d.%d.%d:%d", ip[0], ip[1], ip[2], ip[3], PORT);
 
   Spark.variable("endpoint", ipAddress, STRING);
 }
