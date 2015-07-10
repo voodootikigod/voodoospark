@@ -1,6 +1,6 @@
 ## What is VoodooSpark?
 
-VoodooSpark is a customized firmware build for the [Particle Core and Photon devices](https://www.particle.io) to allow a remote interface definition of the firmware API over a local TCP connection. The intent is to allow client-side programs to directly control the Particle devices in real-time regardless of their programming language. The interface exposed is directly mapped to the one provided by Particle available in their [docs section](http://docs.particle.io/).
+VoodooSpark is a customized firmware build for [Particle's Spark Core and Photon devices](https://www.particle.io) to allow a remote interface definition of the firmware API over a local TCP connection. The intent is to allow client-side programs to directly control the Particle devices in real-time regardless of their programming language. The interface exposed is directly mapped to the one provided by Particle available in their [docs section](http://docs.particle.io/).
 
 The VoodooSpark uses the [Particle Cloud](http://docs.particle.io/core/api/#introduction) and its REST API to provide IP address and port information to the local Particle device. It will then initiate a direct connection to the host machine, on which will need to be a TCP server. Once the connection has been made, the host machine can drive the Particle devices using the binary protocol defined below to effectively execute firmware API level commands dynamically.
 
