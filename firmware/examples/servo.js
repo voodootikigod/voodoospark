@@ -1,7 +1,7 @@
-var Spark = require("../../spark-io");
-var board = new Spark({
-    token: process.env.SPARK_TOKEN,
-    deviceId: process.env.SPARK_DEVICE_ID
+var Particle = require("../../particle-io");
+var board = new Particle({
+    token: process.env.PARTICLE_TOKEN,
+    deviceId: process.env.PARTICLE_DEVICE_ID
 });
 
 

@@ -1,11 +1,11 @@
 var five = require("johnny-five");
-var Spark = require("../../spark-io");
+var Particle = require("../../particle-io");
 var keypress = require('keypress');
 
 var board = new five.Board({
-    io: new Spark({
-        token: process.env.SPARK_TOKEN,
-        deviceId: process.env.SPARK_DEVICE_ID
+    io: new Particle({
+        token: process.env.PARTICLE_TOKEN,
+        deviceId: process.env.PARTICLE_DEVICE_ID
     })
 });
 
