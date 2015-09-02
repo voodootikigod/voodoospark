@@ -5,7 +5,7 @@
   * @version V2.7.2
   * @date    16-June-2015
   * @brief   Exposes the firmware level API through a TCP Connection initiated
-  *          to the spark device
+  *          to the Particle devices (Core and Photon)
   ******************************************************************************
   Copyright (c) 2015 Chris Williams (voodootikigod)  All rights reserved.
 
@@ -191,7 +191,7 @@ unsigned long SerialSpeed[] = {
  */
 Servo servos[8];
 /*
-  The Spark board can only support PWM/Servo on specific pins, so
+  The Particle devices can only support PWM/Servo on specific pins, so
   based on the pin number, determine the servo index for the allocated
   servo object.
  */
@@ -544,7 +544,7 @@ void processInput() {
         Serial.println(sampleInterval, DEC);
         #endif
 
-        // Lower than ~100ms will likely crash the spark,
+        // Lower than ~100ms will likely crash the device,
         // but
         if (sampleInterval < 20) {
           sampleInterval = 20;
@@ -855,7 +855,7 @@ void loop() {
 
 
     // Reporting must be limited to every ~100ms
-    // Otherwise the spark becomes unreliable and
+    // Otherwise the device becomes unreliable and
     // exhibits a higher crash frequency.
     nowms = millis();
     if (nowms - lastms > sampleInterval && reporters > 0) {
