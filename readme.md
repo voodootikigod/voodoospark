@@ -15,7 +15,7 @@ With your Particle device connected to a Wifi network and has already gone throu
 5.  Once the flashing process is complete, close the Particle.io Editor.
 
 
-Alternately, the firmware may be loaded using the Particle CLI ([particle-cli](https://github.com/particle/particle-cli)) instead of the Particle.io Editor:
+Alternately, the firmware may be loaded using the Particle CLI ([particle-cli](https://github.com/spark/particle-cli)) instead of the Particle.io Editor:
 
 ``` bash
 npm install -g particle-cli
