@@ -3,5 +3,5 @@
   "author": "Chris Williams <voodootikigod@gmail.com>",
   "license": "MIT",
   "version": "2.7.2",
-  "description": "TCP enabled IO protocol for Spark Core communication"
+  "description": "TCP enabled IO protocol for Spark Device (Core, Photon) communication"
 }
