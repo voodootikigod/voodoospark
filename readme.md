@@ -1,19 +1,18 @@
 ## What is VoodooSpark?
 
-VoodooSpark is a customized firmware build for the [Particle devices](https://www.particle.io) (Core and Photon) to allow a remote interface definition of the firmware API over a local TCP connection. The intent is to allow client-side programs to directly control the Particle devices in real-time regardless of their programming language. The interface exposed is directly mapped to the one provided by Particle available in their [docs section](https://docs.particle.io/).
+VoodooSpark is a customized firmware build for [Particle's Spark Core and Photon devices](https://www.particle.io) to allow a remote interface definition of the firmware API over a local TCP connection. The intent is to allow client-side programs to directly control the Particle devices in real-time regardless of their programming language. The interface exposed is directly mapped to the one provided by Particle available in their [docs section](http://docs.particle.io/).
 
-The VoodooSpark uses the [Particle Cloud](https://www.particle.io/prototype) and its REST API to provide IP address and port information to the local Particle device. It will then initiate a direct connection to the host machine, on which will need to be a TCP server. Once the connection has been made, the host machine can drive the Particle device using the binary protocol defined below to effectively execute firmware API level commands dynamically.
+The VoodooSpark uses the [Particle Cloud](http://docs.particle.io/core/api/#introduction) and its REST API to provide IP address and port information to the local Particle device. It will then initiate a direct connection to the host machine, on which will need to be a TCP server. Once the connection has been made, the host machine can drive the Particle devices using the binary protocol defined below to effectively execute firmware API level commands dynamically.
 
 ## Loading the Firmware
 
-With your Particle device connected to a Wifi network and has already gone through the [connection process](https://docs.particle.io/guide/getting-started/connect/photon/#connecting-your-device):
+With your Particle device connected to a Wifi network and has already gone through the ["claim"/ownership process](http://docs.particle.io/core/api/#introduction-claim-device):
 
-1.  Open the [Particle.io Editor](https://www.particle.io/build) with the credentials used when going through the connection process.
+1.  Open the [Particle.io Editor](https://build.particle.io/build) with the credentials used when going through the claiming process.
 2.  Copy and paste the entire contents of [firmware/voodoospark.cpp](https://raw.githubusercontent.com/voodootikigod/voodoospark/master/firmware/voodoospark.cpp) into the editor window.
 3.  Click "Verify"
 4.  Click "Flash"
 5.  Once the flashing process is complete, close the Particle.io Editor.
-
 
 Alternately, the firmware may be loaded using the Particle CLI ([particle-cli](https://github.com/spark/particle-cli)) instead of the Particle.io Editor:
 
@@ -23,14 +22,13 @@ particle cloud login
 particle cloud flash PARTICLE_DEVICE_ID firmware/voodoospark.cpp
 ```
 
-
 Now your Particle device is running VoodooSpark, lets connect to it!
 
 ## Connecting the Particle device to You!
 
-The way VoodooSpark works is to use the Particle Cloud as a channel to identify where to initiate the TCP connection to the Particle Device from your host machine.
+The way VoodooSpark works is to use the Particle Cloud as a channel to identify where to initiate the TCP connection to the device from your host machine.
 
-In order to connect the Particle device to your computer, you will first need to issue an HTTP GET request to the Particle Cloud. This can be done via any programming language, but for this example we are using a simple CURL command. You will need some information outlined with curly braces below, please note the {DEVICE-ID} and {ACCESS-TOKEN} are available from the [Particle.io Editor](https://www.particle.io/build)
+In order to connect the Particle device to your computer, you will first need to issue an HTTP GET request to the Particle Cloud. This can be done via any programming language, but for this example we are using a simple CURL command. You will need some information outlined with curly braces below, please note the {DEVICE-ID} and {ACCESS-TOKEN} are available from the [Particle.io Editor](https://build.particle.io/build)
 
     curl https://api.particle.io/v1/devices/{DEVICE-ID}/endpoint?access_token={ACCESS-TOKEN}
 
@@ -55,7 +53,7 @@ With the IP Address and TCP port information, use your favorite language or TCP 
 
 ## How to Debug
 
-In case you want to see what is going inside the VoodooSpark in real-time, we have built in a lot of debug hooks for you. You will need a USB cable and the `screen` or `minicom` utilities (one of them) on unix. Modify the firmware loaded in the particle build system to convert the line:
+In case you want to see what is going inside the VoodooSpark in real-time, we have built in a lot of debug hooks for you. You will need a USB cable and the `screen` or `minicom` utilities (one of them) on unix. Modify the firmware loaded in the Particle build system to convert the line:
 
     #define DEBUG 0
 
@@ -63,7 +61,7 @@ to the following definition:
 
     #define DEBUG 1
 
-This will enable debug mode, boot a serial port connection on the Particle device and present on your computer for you to watch the inside voodoo. Be sure to flash the new firmware to your device, this is very important and easy to miss. Once the flashing finishes, do an
+This will enable debug mode, boot a serial port connection on the device and present on your computer for you to watch the inside voodoo. Be sure to flash the new firmware to your device, this is very important and easy to miss. Once the flashing finishes, do an
 
     ls /dev
 
@@ -77,7 +75,7 @@ For screen this command will look like:
 
 ## Reference Implementations
 
-*   [Particle-io _node.js_](https://github.com/rwaldron/particle-io)
+*   [Particle-io _node.js_](https://github.com/rwaldron/spark-io)
 *   [Vspark _Go_](https://github.com/audreylim/vspark)
 
 ## License
