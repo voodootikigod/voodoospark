@@ -34,7 +34,7 @@
 
 #include "application.h"
 
-#define DEBUG 0
+#define DEBUG 1
 #define PORT 48879
 #define MAX_DATA_BYTES 128
 
@@ -66,13 +66,17 @@
 // #define SPI_SET_DATA_MODE           0x24
 // #define SPI_TRANSFER                0x25
 // /* NOTE GAP */
-// #define WIRE_BEGIN                  0x30
-// #define WIRE_REQUEST_FROM           0x31
-// #define WIRE_BEGIN_TRANSMISSION     0x32
-// #define WIRE_END_TRANSMISSION       0x33
-// #define WIRE_WRITE                  0x34
-// #define WIRE_AVAILABLE              0x35
-// #define WIRE_READ                   0x36
+#define I2C_CONFIG                  0x30
+#define I2C_REPLY                   0x31
+#define I2C_REQUEST                 0x32
+#define I2C_WRITE                   0x34
+#define I2C_READ                    0x35
+#define I2C_READ_CONTINUOUSLY       0x36
+#define I2C_STOP_READING            0x37
+#define I2C_READ_WRITE_MODE_MASK    B00011000
+#define I2C_10BIT_ADDRESS_MODE_MASK B00100000
+#define I2C_MAX_QUERIES             8
+#define I2C_REGISTER_NOT_SPECIFIED  -1
 /* NOTE GAP */
 #define SERVO_WRITE                 0x41
 #define ACTION_RANGE                0x46
@@ -181,6 +185,12 @@ unsigned long sampleInterval = 100;
 unsigned long SerialSpeed[] = {
   600, 1200, 2400, 4800, 9600, 14400, 19200, 28800, 38400, 57600, 115200
 };
+
+byte i2cRxData[32];
+boolean isI2CEnabled = false;
+signed char queryIndex = -1;
+// default delay time between i2c read request and Wire.requestFrom()
+unsigned int i2cReadDelayTime = 0;
 
 /*
   PWM/Servo support is CONFIRMED available on:
@@ -336,6 +346,49 @@ void setup() {
   sprintf(ipAddress, "%d.%d.%d.%d:%d", ip[0], ip[1], ip[2], ip[3], PORT);
 
   Spark.variable("endpoint", ipAddress, STRING);
+
+  Wire.begin();
+}
+
+void readAndReportData(byte address, int theRegister, byte numBytes) {
+  #if DEBUG
+  Serial.println("-------------- I2C Read and Report Data");
+  #endif
+
+  // allow I2C requests that don't require a register read
+  // for example, some devices using an interrupt pin to signify new data available
+  // do not always require the register read so upon interrupt you call Wire.requestFrom()
+  if (theRegister != I2C_REGISTER_NOT_SPECIFIED) {
+    Wire.beginTransmission(address);
+    Wire.write((byte)theRegister);
+    Wire.endTransmission();
+    // do not set a value of 0
+    if (i2cReadDelayTime > 0) {
+      // delay is necessary for some devices such as WiiNunchuck
+      delayMicroseconds(i2cReadDelayTime);
+    }
+  } else {
+    theRegister = 0;  // fill the register with a dummy value
+  }
+
+  Wire.requestFrom(address, numBytes);  // all bytes are returned in requestFrom
+
+  // check to be sure correct number of bytes were returned by slave
+  if (numBytes < Wire.available()) {
+    //Firmata.sendString("I2C: Too many bytes received");
+  } else if (numBytes > Wire.available()) {
+    //Firmata.sendString("I2C: Too few bytes received");
+  }
+
+  i2cRxData[0] = address;
+  i2cRxData[1] = theRegister;
+
+  for (int i = 0; i < numBytes && Wire.available(); i++) {
+    i2cRxData[2 + i] = Wire.read();
+  }
+
+  // send slave address, register and received bytes
+  //Firmata.sendSysex(SYSEX_I2C_REPLY, numBytes + 2, i2cRxData);
 }
 
 void processInput() {
@@ -679,58 +732,103 @@ void processInput() {
       //   break;
 
       // // Wire API
-      // case WIRE_BEGIN:  // Wire.begin
-      //   address = cached[1];
-      //   if (address == 0) {
-      //     Wire.begin();
-      //   } else {
-      //     Wire.begin(address);
-      //   }
-      //   break;
+      case I2C_REQUEST:
+          mode = argv[1] & I2C_READ_WRITE_MODE_MASK;
+          if (argv[1] & I2C_10BIT_ADDRESS_MODE_MASK) {
+            Firmata.sendString("10-bit addressing not supported");
+            return;
+          }
+          else {
+            slaveAddress = argv[0];
+          }
 
-      // case WIRE_REQUEST_FROM:  // Wire.requestFrom
-      //   address = cached[1];
-      //   val = cached[2];
-      //   stop = cached[3];
-      //   Wire.requestFrom(address, val, stop);
-      //   break;
+          switch (mode) {
+            case I2C_WRITE:
+              Wire.beginTransmission(slaveAddress);
+              for (byte i = 2; i < argc; i += 2) {
+                data = argv[i] + (argv[i + 1] << 7);
+                wireWrite(data);
+              }
+              Wire.endTransmission();
+              delayMicroseconds(70);
+              break;
+            case I2C_READ:
+              if (argc == 6) {
+                // a slave register is specified
+                slaveRegister = argv[2] + (argv[3] << 7);
+                data = argv[4] + (argv[5] << 7);  // bytes to read
+              }
+              else {
+                // a slave register is NOT specified
+                slaveRegister = I2C_REGISTER_NOT_SPECIFIED;
+                data = argv[2] + (argv[3] << 7);  // bytes to read
+              }
+              readAndReportData(slaveAddress, (int)slaveRegister, data);
+              break;
+            case I2C_READ_CONTINUOUSLY:
+              if ((queryIndex + 1) >= I2C_MAX_QUERIES) {
+                // too many queries, just ignore
+                Firmata.sendString("too many queries");
+                break;
+              }
+              if (argc == 6) {
+                // a slave register is specified
+                slaveRegister = argv[2] + (argv[3] << 7);
+                data = argv[4] + (argv[5] << 7);  // bytes to read
+              }
+              else {
+                // a slave register is NOT specified
+                slaveRegister = (int)I2C_REGISTER_NOT_SPECIFIED;
+                data = argv[2] + (argv[3] << 7);  // bytes to read
+              }
+              queryIndex++;
+              query[queryIndex].addr = slaveAddress;
+              query[queryIndex].reg = slaveRegister;
+              query[queryIndex].bytes = data;
+              break;
+            case I2C_STOP_READING:
+              byte queryIndexToSkip;
+              // if read continuous mode is enabled for only 1 i2c device, disable
+              // read continuous reporting for that device
+              if (queryIndex <= 0) {
+                queryIndex = -1;
+              } else {
+                // if read continuous mode is enabled for multiple devices,
+                // determine which device to stop reading and remove it's data from
+                // the array, shifiting other array data to fill the space
+                for (byte i = 0; i < queryIndex + 1; i++) {
+                  if (query[i].addr == slaveAddress) {
+                    queryIndexToSkip = i;
+                    break;
+                  }
+                }
 
-      // case WIRE_BEGIN_TRANSMISSION:  // Wire.beginTransmission
-      //   address = cached[1];
-      //   Wire.beginTransmission(address);
-      //   break;
+                for (byte i = queryIndexToSkip; i < queryIndex + 1; i++) {
+                  if (i < I2C_MAX_QUERIES) {
+                    query[i].addr = query[i + 1].addr;
+                    query[i].reg = query[i + 1].reg;
+                    query[i].bytes = query[i + 1].bytes;
+                  }
+                }
+                queryIndex--;
+              }
+              break;
+            default:
+              break;
+          }
+          break;
+        case I2C_CONFIG:
+          delayTime = (argv[0] + (argv[1] << 7));
 
-      // case WIRE_END_TRANSMISSION:  // Wire.endTransmission
-      //   stop = cached[1];
-      //   val = Wire.endTransmission(stop);
-      //   server.write(0x33);    // could be (action)
-      //   server.write(val);
-      //   break;
+          if (delayTime > 0) {
+            i2cReadDelayTime = delayTime;
+          }
 
-      // case WIRE_WRITE:  // Wire.write
-      //   len = cached[1];
-      //   uint8_t wireData[len];
+          if (!isI2CEnabled) {
+            enableI2CPins();
+          }
 
-      //   for (i = 0; i< len; i++) {
-      //     wireData[i] = cached[1];
-      //   }
-      //   val = Wire.write(wireData, len);
-
-      //   server.write(0x34);    // could be (action)
-      //   server.write(val);
-      //   break;
-
-      // case WIRE_AVAILABLE:  // Wire.available
-      //   val = Wire.available();
-      //   server.write(0x35);    // could be (action)
-      //   server.write(val);
-      //   break;
-
-      // case WIRE_READ:  // Wire.read
-      //   val = Wire.read();
-      //   server.write(0x36);    // could be (action)
-      //   server.write(val);
-      //   break;
+          break;
 
       case SERVO_WRITE:
         pin = cached[1];
