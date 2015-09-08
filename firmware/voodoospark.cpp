@@ -67,15 +67,8 @@
 // #define SPI_TRANSFER                0x25
 // /* NOTE GAP */
 #define I2C_CONFIG                  0x30
-#define I2C_REPLY                   0x31
-#define I2C_REQUEST                 0x32
-#define I2C_WRITE                   0x34
-#define I2C_READ                    0x35
-#define I2C_READ_CONTINUOUSLY       0x36
-#define I2C_STOP_READING            0x37
-#define I2C_READ_WRITE_MODE_MASK    B00011000
-#define I2C_10BIT_ADDRESS_MODE_MASK B00100000
-#define I2C_MAX_QUERIES             8
+#define I2C_WRITE                   0x31
+#define I2C_READ                    0x32
 #define I2C_REGISTER_NOT_SPECIFIED  -1
 /* NOTE GAP */
 #define SERVO_WRITE                 0x41
@@ -137,14 +130,14 @@ uint8_t bytesToExpectByAction[] = {
   0,    // 0x2e
   0,    // 0x2f
   // wire I/O
-  1,    // WIRE_BEGIN
-  3,    // WIRE_REQUEST_FROM
-  1,    // WIRE_BEGIN_TRANSMISSION
-  1,    // WIRE_END_TRANSMISSION
-  1,    // WIRE_WRITE  -- variable length message!
-  0,    // WIRE_AVAILABLE
-  0,    // WIRE_READ
-  // gap from 0x37-0x3f
+  1,    // I2C_CONFIG
+  1,    // I2C_WRITE -- variable length message!
+  0,    // I2C_READ
+  // gap from 0x33-0x3f
+  0,    // 0x33
+  0,    // 0x34
+  0,    // 0x35
+  0,    // 0x36
   0,    // 0x37
   0,    // 0x38
   0,    // 0x39
@@ -186,8 +179,7 @@ unsigned long SerialSpeed[] = {
   600, 1200, 2400, 4800, 9600, 14400, 19200, 28800, 38400, 57600, 115200
 };
 
-byte i2cRxData[32];
-boolean isI2CEnabled = false;
+byte i2cRxData[64];
 signed char queryIndex = -1;
 // default delay time between i2c read request and Wire.requestFrom()
 unsigned int i2cReadDelayTime = 0;
@@ -345,12 +337,12 @@ void setup() {
   // https://community.particle.io/t/network-localip-to-string-to-get-it-via-spark-variable/2581/5
   sprintf(ipAddress, "%d.%d.%d.%d:%d", ip[0], ip[1], ip[2], ip[3], PORT);
 
-  Spark.variable("endpoint", ipAddress, STRING);
-
-  Wire.begin();
+  Particle.variable("endpoint", ipAddress, STRING);
 }
 
-void readAndReportData(byte address, int theRegister, byte numBytes) {
+void readAndReportI2cData(byte address, int theRegister, byte numBytes) {
+  byte data;
+
   #if DEBUG
   Serial.println("-------------- I2C Read and Report Data");
   #endif
@@ -373,26 +365,48 @@ void readAndReportData(byte address, int theRegister, byte numBytes) {
 
   Wire.requestFrom(address, numBytes);  // all bytes are returned in requestFrom
 
-  // check to be sure correct number of bytes were returned by slave
+  #if DEBUG
+  // check to be sure correct number of bytes were returned by device
   if (numBytes < Wire.available()) {
-    //Firmata.sendString("I2C: Too many bytes received");
+    Serial.println("I2C: Too many bytes received");
   } else if (numBytes > Wire.available()) {
-    //Firmata.sendString("I2C: Too few bytes received");
+    Serial.println("I2C: Too few bytes received");
   }
+  #endif
 
-  i2cRxData[0] = address;
-  i2cRxData[1] = theRegister;
+  i2cRxData[0] = 0x77;
+  i2cRxData[1] = numBytes;
+  i2cRxData[2] = address;
+  i2cRxData[3] = theRegister;
+
+  #if DEBUG
+  Serial.print("Number of Bytes: ");
+  Serial.println(numBytes, DEC);
+  Serial.print("Address: ");
+  Serial.println(address, HEX);
+  Serial.print("Register: ");
+  Serial.println(theRegister, HEX);
+  #endif
 
   for (int i = 0; i < numBytes && Wire.available(); i++) {
-    i2cRxData[2 + i] = Wire.read();
+    data = Wire.read();
+
+    #if DEBUG
+    Serial.print("Data[");
+    Serial.print(i, DEC);
+    Serial.print("]: ");
+    Serial.println(data);
+    #endif
+
+    i2cRxData[4 + i] = data;
   }
 
-  // send slave address, register and received bytes
-  //Firmata.sendSysex(SYSEX_I2C_REPLY, numBytes + 2, i2cRxData);
+  // send address, register and received bytes
+  server.write(i2cRxData, numBytes + 4);
 }
 
 void processInput() {
-  int pin, mode, val, type, speed, address, stop, len, k, i, distance;
+  int pin, mode, val, type, speed, address, reg, stop, len, k, i, distance, delayTime;
   int byteCount = bytesRead;
 
   #if DEBUG
@@ -731,105 +745,81 @@ void processInput() {
       //   server.write(val);
       //   break;
 
-      // // Wire API
-      case I2C_REQUEST:
-          mode = argv[1] & I2C_READ_WRITE_MODE_MASK;
-          if (argv[1] & I2C_10BIT_ADDRESS_MODE_MASK) {
-            Firmata.sendString("10-bit addressing not supported");
-            return;
-          }
-          else {
-            slaveAddress = argv[0];
-          }
+      // Wire API
+      case I2C_CONFIG:
+        delayTime = cached[0];
 
-          switch (mode) {
-            case I2C_WRITE:
-              Wire.beginTransmission(slaveAddress);
-              for (byte i = 2; i < argc; i += 2) {
-                data = argv[i] + (argv[i + 1] << 7);
-                wireWrite(data);
-              }
-              Wire.endTransmission();
-              delayMicroseconds(70);
-              break;
-            case I2C_READ:
-              if (argc == 6) {
-                // a slave register is specified
-                slaveRegister = argv[2] + (argv[3] << 7);
-                data = argv[4] + (argv[5] << 7);  // bytes to read
-              }
-              else {
-                // a slave register is NOT specified
-                slaveRegister = I2C_REGISTER_NOT_SPECIFIED;
-                data = argv[2] + (argv[3] << 7);  // bytes to read
-              }
-              readAndReportData(slaveAddress, (int)slaveRegister, data);
-              break;
-            case I2C_READ_CONTINUOUSLY:
-              if ((queryIndex + 1) >= I2C_MAX_QUERIES) {
-                // too many queries, just ignore
-                Firmata.sendString("too many queries");
-                break;
-              }
-              if (argc == 6) {
-                // a slave register is specified
-                slaveRegister = argv[2] + (argv[3] << 7);
-                data = argv[4] + (argv[5] << 7);  // bytes to read
-              }
-              else {
-                // a slave register is NOT specified
-                slaveRegister = (int)I2C_REGISTER_NOT_SPECIFIED;
-                data = argv[2] + (argv[3] << 7);  // bytes to read
-              }
-              queryIndex++;
-              query[queryIndex].addr = slaveAddress;
-              query[queryIndex].reg = slaveRegister;
-              query[queryIndex].bytes = data;
-              break;
-            case I2C_STOP_READING:
-              byte queryIndexToSkip;
-              // if read continuous mode is enabled for only 1 i2c device, disable
-              // read continuous reporting for that device
-              if (queryIndex <= 0) {
-                queryIndex = -1;
-              } else {
-                // if read continuous mode is enabled for multiple devices,
-                // determine which device to stop reading and remove it's data from
-                // the array, shifiting other array data to fill the space
-                for (byte i = 0; i < queryIndex + 1; i++) {
-                  if (query[i].addr == slaveAddress) {
-                    queryIndexToSkip = i;
-                    break;
-                  }
-                }
+        #if DEBUG
+        Serial.print("delayTime: ");
+        Serial.println(delayTime, DEC);
+        #endif
 
-                for (byte i = queryIndexToSkip; i < queryIndex + 1; i++) {
-                  if (i < I2C_MAX_QUERIES) {
-                    query[i].addr = query[i + 1].addr;
-                    query[i].reg = query[i + 1].reg;
-                    query[i].bytes = query[i + 1].bytes;
-                  }
-                }
-                queryIndex--;
-              }
-              break;
-            default:
-              break;
-          }
-          break;
-        case I2C_CONFIG:
-          delayTime = (argv[0] + (argv[1] << 7));
+        if (delayTime > 0) {
+          i2cReadDelayTime = delayTime;
+        }
 
-          if (delayTime > 0) {
-            i2cReadDelayTime = delayTime;
-          }
+        pinModeFor[0] = 0x05;
+        pinModeFor[1] = 0x05;
 
-          if (!isI2CEnabled) {
-            enableI2CPins();
-          }
+        if ( !Wire.isEnabled() ) {
+          Wire.begin();
+        }
+        
+        break;
 
-          break;
+      case I2C_WRITE:
+        address = cached[1];
 
+        #if DEBUG
+        Serial.print("address: ");
+        Serial.println(address, HEX);
+        Serial.print("data length: ");
+        Serial.println(byteCount - 2, DEC);
+        #endif
+
+        Wire.beginTransmission(address);
+        for (byte i = 2; i < byteCount; i += 2) {
+          val = cached[i] + (cached[i + 1] << 7);
+
+          #if DEBUG
+          Serial.print("data[");
+          Serial.print(i, DEC);
+          Serial.print("]: ");
+          Serial.println(val, HEX);
+          #endif
+
+          Wire.write(val);
+        }
+        Wire.endTransmission();
+        delayMicroseconds(70);
+        break;
+
+      case I2C_READ:
+        address = cached[1];
+
+        if (byteCount == 6) {
+          // a register is specified
+          reg = cached[2] + (cached[3] << 7);
+          val = cached[4] + (cached[5] << 7);  // bytes to read
+        }
+        else {
+          // a register is NOT specified
+          reg = I2C_REGISTER_NOT_SPECIFIED;
+          val = cached[2] + (cached[3] << 7);  // bytes to read
+        }
+
+        #if DEBUG
+        Serial.print("address: ");
+        Serial.println(address, HEX);
+        Serial.print("register: ");
+        Serial.println(reg, HEX);
+        Serial.print("data: ");
+        Serial.println(val);
+        #endif
+
+        readAndReportI2cData(address, reg, val);
+        break;
+      
       case SERVO_WRITE:
         pin = cached[1];
         val = cached[2];
