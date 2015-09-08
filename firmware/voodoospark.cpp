@@ -377,7 +377,8 @@ void readAndReportI2cData(byte address, int theRegister, byte numBytes) {
   i2cRxData[0] = 0x77;
   i2cRxData[1] = numBytes;
   i2cRxData[2] = address;
-  i2cRxData[3] = theRegister;
+  i2cRxData[3] = theRegister & 0x7f;
+  i2cRxData[4] = theRegister >> 0x07 & 0x7f;
 
   #if DEBUG
   Serial.print("Number of Bytes: ");
@@ -398,7 +399,7 @@ void readAndReportI2cData(byte address, int theRegister, byte numBytes) {
     Serial.println(data);
     #endif
 
-    i2cRxData[4 + i] = data;
+    i2cRxData[5 + i] = data;
   }
 
   // send address, register and received bytes
@@ -796,17 +797,8 @@ void processInput() {
 
       case I2C_READ:
         address = cached[1];
-
-        if (byteCount == 6) {
-          // a register is specified
-          reg = cached[2] + (cached[3] << 7);
-          val = cached[4] + (cached[5] << 7);  // bytes to read
-        }
-        else {
-          // a register is NOT specified
-          reg = I2C_REGISTER_NOT_SPECIFIED;
-          val = cached[2] + (cached[3] << 7);  // bytes to read
-        }
+        reg = cached[2] + (cached[3] << 7);  // register
+        val = cached[4] + (cached[5] << 7);  // bytes to read
 
         #if DEBUG
         Serial.print("address: ");
