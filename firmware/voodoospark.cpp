@@ -130,8 +130,8 @@ uint8_t bytesToExpectByAction[] = {
   0,    // 0x2e
   0,    // 0x2f
   // wire I/O
-  1,    // I2C_CONFIG
-  1,    // I2C_WRITE -- variable length message!
+  2,    // I2C_CONFIG
+  3,    // I2C_WRITE -- variable length message!
   0,    // I2C_READ
   // gap from 0x33-0x3f
   0,    // 0x33
@@ -161,7 +161,7 @@ bool hasAction = false;
 bool isConnected = false;
 
 byte buffer[MAX_DATA_BYTES];
-byte cached[4];
+byte cached[64];
 byte reporting[20];
 byte pinModeFor[20];
 byte analogReporting[20];
@@ -406,8 +406,33 @@ void readAndReportI2cData(byte address, int theRegister, byte numBytes) {
   server.write(i2cRxData, numBytes + 4);
 }
 
+void cacheBuffer(int byteCount, int cacheLength) {
+    // Copy the expected bytes into the cache and shift
+    // the unused bytes to the beginning of the buffer
+    Serial.print("Cached: ");
+
+    for (int k = 0; k < byteCount; k++) {
+      // Cache the bytes that we're expecting for
+      // this action.
+      if (k < cacheLength) {
+        cached[k] = buffer[k];
+
+        #if DEBUG
+        Serial.print("0x");
+        Serial.print(cached[k], HEX);
+        Serial.print(", ");
+        #endif
+      }
+
+      // Shift the unused buffer to the front
+      buffer[k] = buffer[k + cacheLength];
+    }
+
+    Serial.println("");
+}
+
 void processInput() {
-  int pin, mode, val, type, speed, address, reg, stop, len, k, i, distance, delayTime;
+  int pin, mode, val, type, speed, address, reg, stop, len, k, i, distance, delayTime, dataLength;
   int byteCount = bytesRead;
 
   #if DEBUG
@@ -447,29 +472,12 @@ void processInput() {
   // enough bytes are read, begin processing the action.
   if (hasAction && bytesRead >= bytesExpecting) {
 
-    // Copy the expected bytes into the cache and shift
-    // the unused bytes to the beginning of the buffer
-    for (k = 0; k < byteCount; k++) {
-      // Cache the bytes that we're expecting for
-      // this action.
-      if (k < bytesExpecting) {
-        cached[k] = buffer[k];
-
-        // #if DEBUG
-        // Serial.print("Cached: ");
-        // Serial.println(cached[k], DEC);
-        // #endif
-      }
-
-      // Shift the unused buffer to the front
-      buffer[k] = buffer[k + bytesExpecting];
-    }
-
+    cacheBuffer(byteCount, bytesExpecting);
     byteCount -= bytesExpecting;
 
     #if DEBUG
-    Serial.print("ACTION: ");
-    Serial.println(action, DEC);
+    Serial.print("ACTION: 0x");
+    Serial.println(action, HEX);
     #endif
 
     // Proceed with action processing
@@ -748,7 +756,7 @@ void processInput() {
 
       // Wire API
       case I2C_CONFIG:
-        delayTime = cached[0];
+        delayTime = cached[1] + (cached[2] << 7);
 
         #if DEBUG
         Serial.print("delayTime: ");
@@ -763,6 +771,7 @@ void processInput() {
         pinModeFor[1] = 0x05;
 
         if ( !Wire.isEnabled() ) {
+          Serial.println("******* Enable I2C ******");
           Wire.begin();
         }
         
@@ -770,27 +779,35 @@ void processInput() {
 
       case I2C_WRITE:
         address = cached[1];
+        dataLength = cached[2] + (cached[3] << 7);
 
         #if DEBUG
         Serial.print("address: ");
         Serial.println(address, HEX);
         Serial.print("data length: ");
-        Serial.println(byteCount - 2, DEC);
+        Serial.println(dataLength, DEC);
         #endif
 
+        cacheBuffer(byteCount, dataLength);
+        byteCount -= dataLength;
+
         Wire.beginTransmission(address);
-        for (byte i = 2; i < byteCount; i += 2) {
+        for (byte i = 0; i < dataLength; i += 2) {
           val = cached[i] + (cached[i + 1] << 7);
 
           #if DEBUG
           Serial.print("data[");
           Serial.print(i, DEC);
-          Serial.print("]: ");
-          Serial.println(val, HEX);
+          Serial.print("]: 0x");
+          Serial.print(val, HEX);
+          Serial.print(", ");
           #endif
 
           Wire.write(val);
         }
+
+        Serial.println("");
+
         Wire.endTransmission();
         delayMicroseconds(70);
         break;
@@ -848,7 +865,7 @@ void processInput() {
         break;
     } // <-- This is the end of the switch
 
-    memset(&cached[0], 0, 4);
+    memset(&cached[0], 0, 64);
 
 
     #if DEBUG
@@ -923,12 +940,13 @@ void loop() {
       Serial.println(bytesRead, DEC);
 
       for (int i = 0; i < bytesRead; i++) {
-        Serial.print("[");
         Serial.print(i, DEC);
-        Serial.print("] ");
-        Serial.println(buffer[i], DEC);
+        Serial.print(":0x");
+        Serial.print(buffer[i], HEX);
+        Serial.print(", ");
       }
       #endif
+      Serial.println("");
 
       processInput();
     }
