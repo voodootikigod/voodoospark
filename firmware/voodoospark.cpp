@@ -132,7 +132,7 @@ uint8_t bytesToExpectByAction[] = {
   // wire I/O
   2,    // I2C_CONFIG
   3,    // I2C_WRITE -- variable length message!
-  0,    // I2C_READ
+  5,    // I2C_READ
   // gap from 0x33-0x3f
   0,    // 0x33
   0,    // 0x34
@@ -345,6 +345,12 @@ void readAndReportI2cData(byte address, int theRegister, byte numBytes) {
 
   #if DEBUG
   Serial.println("-------------- I2C Read and Report Data");
+  Serial.print("address: 0x");
+  Serial.println(address, HEX);
+  Serial.print("register: 0x");
+  Serial.println(theRegister, HEX);
+  Serial.print("numBytes: ");
+  Serial.println(numBytes, DEC);
   #endif
 
   // allow I2C requests that don't require a register read
@@ -395,15 +401,15 @@ void readAndReportI2cData(byte address, int theRegister, byte numBytes) {
     #if DEBUG
     Serial.print("Data[");
     Serial.print(i, DEC);
-    Serial.print("]: ");
-    Serial.println(data);
+    Serial.print("]: 0x");
+    Serial.println(data, HEX);
     #endif
 
     i2cRxData[5 + i] = data;
   }
 
   // send address, register and received bytes
-  server.write(i2cRxData, numBytes + 4);
+  server.write(i2cRxData, numBytes + 5);
 }
 
 void cacheBuffer(int byteCount, int cacheLength) {
