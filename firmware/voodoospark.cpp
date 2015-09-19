@@ -773,8 +773,8 @@ void processInput() {
           i2cReadDelayTime = delayTime;
         }
 
-        pinModeFor[0] = 0x05;
-        pinModeFor[1] = 0x05;
+        pinModeFor[0] = 0x06;
+        pinModeFor[1] = 0x06;
 
         if ( !Wire.isEnabled() ) {
           Serial.println("******* Enable I2C ******");
