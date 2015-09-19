@@ -34,7 +34,7 @@
 
 #include "application.h"
 
-#define DEBUG 1
+#define DEBUG 0
 #define PORT 48879
 #define MAX_DATA_BYTES 128
 
@@ -415,7 +415,9 @@ void readAndReportI2cData(byte address, int theRegister, byte numBytes) {
 void cacheBuffer(int byteCount, int cacheLength) {
     // Copy the expected bytes into the cache and shift
     // the unused bytes to the beginning of the buffer
+    #if DEBUG
     Serial.print("Cached: ");
+    #endif
 
     for (int k = 0; k < byteCount; k++) {
       // Cache the bytes that we're expecting for
@@ -434,7 +436,9 @@ void cacheBuffer(int byteCount, int cacheLength) {
       buffer[k] = buffer[k + cacheLength];
     }
 
+    #if DEBUG
     Serial.println("");
+    #endif
 }
 
 void processInput() {
@@ -777,7 +781,10 @@ void processInput() {
         pinModeFor[1] = 0x06;
 
         if ( !Wire.isEnabled() ) {
+          #if DEBUG
           Serial.println("******* Enable I2C ******");
+          #endif
+
           Wire.begin();
         }
         
@@ -812,7 +819,9 @@ void processInput() {
           Wire.write(val);
         }
 
+        #if DEBUG
         Serial.println("");
+        #endif
 
         Wire.endTransmission();
         delayMicroseconds(70);
@@ -951,8 +960,8 @@ void loop() {
         Serial.print(buffer[i], HEX);
         Serial.print(", ");
       }
-      #endif
       Serial.println("");
+      #endif
 
       processInput();
     }
