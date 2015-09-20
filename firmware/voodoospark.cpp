@@ -337,7 +337,7 @@ void setup() {
   // https://community.particle.io/t/network-localip-to-string-to-get-it-via-spark-variable/2581/5
   sprintf(ipAddress, "%d.%d.%d.%d:%d", ip[0], ip[1], ip[2], ip[3], PORT);
 
-  Particle.variable("endpoint", ipAddress, STRING);
+  Spark.variable("endpoint", ipAddress, STRING);
 }
 
 void readAndReportI2cData(byte address, int theRegister, byte numBytes) {
