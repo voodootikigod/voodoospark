@@ -413,32 +413,32 @@ void readAndReportI2cData(byte address, int theRegister, byte numBytes) {
 }
 
 void cacheBuffer(int byteCount, int cacheLength) {
-    // Copy the expected bytes into the cache and shift
-    // the unused bytes to the beginning of the buffer
-    #if DEBUG
-    Serial.print("Cached: ");
-    #endif
+  // Copy the expected bytes into the cache and shift
+  // the unused bytes to the beginning of the buffer
+  #if DEBUG
+  Serial.print("Cached: ");
+  #endif
 
-    for (int k = 0; k < byteCount; k++) {
-      // Cache the bytes that we're expecting for
-      // this action.
-      if (k < cacheLength) {
-        cached[k] = buffer[k];
+  for (int k = 0; k < byteCount; k++) {
+    // Cache the bytes that we're expecting for
+    // this action.
+    if (k < cacheLength) {
+      cached[k] = buffer[k];
 
-        #if DEBUG
-        Serial.print("0x");
-        Serial.print(cached[k], HEX);
-        Serial.print(", ");
-        #endif
-      }
-
-      // Shift the unused buffer to the front
-      buffer[k] = buffer[k + cacheLength];
+      #if DEBUG
+      Serial.print("0x");
+      Serial.print(cached[k], HEX);
+      Serial.print(", ");
+      #endif
     }
 
-    #if DEBUG
-    Serial.println("");
-    #endif
+    // Shift the unused buffer to the front
+    buffer[k] = buffer[k + cacheLength];
+  }
+
+  #if DEBUG
+  Serial.println("");
+  #endif
 }
 
 void processInput() {
@@ -1041,27 +1041,27 @@ long microsecondsToCentimeters(long microseconds)
 
 unsigned long pulseIn(uint16_t pin, uint8_t state) {
 
-    GPIO_TypeDef* portMask = (PIN_MAP[pin].gpio_peripheral); // Cache the target's peripheral mask to speed up the loops.
-    uint16_t pinMask = (PIN_MAP[pin].gpio_pin); // Cache the target's GPIO pin mask to speed up the loops.
-    unsigned long pulseCount = 0; // Initialize the pulseCount variable now to save time.
-    unsigned long loopCount = 0; // Initialize the loopCount variable now to save time.
-    unsigned long loopMax = 20000000; // Roughly just under 10 seconds timeout to maintain the Spark Cloud connection.
+  GPIO_TypeDef* portMask = (PIN_MAP[pin].gpio_peripheral); // Cache the target's peripheral mask to speed up the loops.
+  uint16_t pinMask = (PIN_MAP[pin].gpio_pin); // Cache the target's GPIO pin mask to speed up the loops.
+  unsigned long pulseCount = 0; // Initialize the pulseCount variable now to save time.
+  unsigned long loopCount = 0; // Initialize the loopCount variable now to save time.
+  unsigned long loopMax = 20000000; // Roughly just under 10 seconds timeout to maintain the Spark Cloud connection.
 
-    // Wait for the pin to enter target state while keeping track of the timeout.
-    while (GPIO_ReadInputDataBit(portMask, pinMask) != state) {
-        if (loopCount++ == loopMax) {
-            return 0;
-        }
+  // Wait for the pin to enter target state while keeping track of the timeout.
+  while (GPIO_ReadInputDataBit(portMask, pinMask) != state) {
+    if (loopCount++ == loopMax) {
+      return 0;
     }
+  }
 
-    // Iterate the pulseCount variable each time through the loop to measure the pulse length; we also still keep track of the timeout.
-    while (GPIO_ReadInputDataBit(portMask, pinMask) == state) {
-        if (loopCount++ == loopMax) {
-            return 0;
-        }
-        pulseCount++;
+  // Iterate the pulseCount variable each time through the loop to measure the pulse length; we also still keep track of the timeout.
+  while (GPIO_ReadInputDataBit(portMask, pinMask) == state) {
+    if (loopCount++ == loopMax) {
+      return 0;
     }
+    pulseCount++;
+  }
 
-    // Return the pulse time in microseconds by multiplying the pulseCount variable with the time it takes to run once through the loop.
-    return pulseCount * 0.405; // Calculated the pulseCount++ loop to be about 0.405uS in length.
+  // Return the pulse time in microseconds by multiplying the pulseCount variable with the time it takes to run once through the loop.
+  return pulseCount * 0.405; // Calculated the pulseCount++ loop to be about 0.405uS in length.
 }
