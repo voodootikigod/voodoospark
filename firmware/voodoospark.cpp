@@ -84,8 +84,8 @@ uint8_t bytesToExpectByAction[] = {
   2,    // REPORTING
   2,    // SET_SAMPLE_INTERVAL
   3,    // INTERNAL_RGB
-  // gap from 0x08-0x0f
-  2,    // 0x08
+  1,    // PING_READ
+  // gap from 0x09-0x0f
   0,    // 0x09
   0,    // 0x0a
   0,    // 0x0b
@@ -413,6 +413,74 @@ void readAndReportI2cData(byte address, int theRegister, byte numBytes) {
   server.write(i2cRxData, numBytes + 5);
 }
 
+/*
+ * Original pulseIn Function for the Spark Core - Version 0.1.1 (Beta)
+ * Copyright (2014) Timothy Brown - See: pulsein.license
+ *
+ * Due to the current timeout issues with Spark Cloud
+ * this will return after 10 seconds, even if the
+ * input pulse hasn't finished.
+ *
+ * Input: Trigger Pin, Trigger State
+ * Output: Pulse Length in Microseconds (10uS to 10S)
+ *
+ * Copyright (2015) Rick Waldron (Modifications for improved accuracy on with a Photon)
+ * See LICENSE-MIT
+ *
+ */
+
+unsigned long pulseIn(uint16_t pin, uint8_t state) {
+  #if (PLATFORM_ID == 0)  // Core
+    STM32_Pin_Info* PIN_MAP = HAL_Pin_Map(); // Pointer required for highest access speed
+  #endif
+
+  // Cache the target's peripheral mask to speed up the loops.
+  GPIO_TypeDef* portMask = (PIN_MAP[pin].gpio_peripheral);
+  // Cache the target's GPIO pin mask to speed up the loops.
+  uint16_t pinMask = (PIN_MAP[pin].gpio_pin);
+  unsigned long numloops = 0;
+  // This has to be extremely short, because we dont want to block the process
+  // for longer than is really appropriate
+  unsigned long maxloops = 500000;
+
+  // Wait for the pin to enter target state while keeping track of the timeout.
+  while (GPIO_ReadInputDataBit(portMask, pinMask) != state) {
+    if (numloops++ == maxloops) {
+      Serial.println("Timed out, never equaled state");
+      return 0;
+    }
+  }
+
+  unsigned long us = micros();
+  unsigned long width;
+
+  while (GPIO_ReadInputDataBit(portMask, pinMask) == state) {
+    if (numloops++ == maxloops) {
+      return 0;
+    }
+
+    width = micros() - us;
+  }
+
+  return width;
+}
+
+
+unsigned long pingRead(int pin) {
+  pinMode(pin, OUTPUT);
+  digitalWrite(pin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(pin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(pin, LOW);
+
+  pinMode(pin, INPUT);
+
+  unsigned long duration = pulseIn(pin, HIGH);
+
+  return duration;
+}
+
 void cacheBuffer(int byteCount, int cacheLength) {
   // Copy the expected bytes into the cache and shift
   // the unused bytes to the beginning of the buffer
@@ -443,8 +511,10 @@ void cacheBuffer(int byteCount, int cacheLength) {
 }
 
 void processInput() {
-  int pin, mode, val, type, speed, address, reg, stop, len, k, i, distance, delayTime, dataLength;
+  int pin, mode, val, type, speed, address, reg, stop, len, k, i, delayTime, dataLength;
   int byteCount = bytesRead;
+
+  unsigned long us;
 
   #if DEBUG
   Serial.println("--------------PROCESSING");
@@ -574,21 +644,6 @@ void processInput() {
         send(0x03, pin, val);
         break;
 
-      case PING_READ:
-        pin = cached[1]; // echo pin
-        val = cached[2]; // trig pin
-        distance = scan(pin, val);
-
-        #if DEBUG
-        Serial.print("PIN: ");
-        Serial.println(pin, DEC);
-        Serial.print("VALUE: ");
-        Serial.println(distance, HEX);
-        #endif
-
-        send(0x08, pin, distance);
-        break;
-
       case ANALOG_READ:  // analogRead
         pin = cached[1];
         val = analogRead(pin);
@@ -599,6 +654,35 @@ void processInput() {
         Serial.println(val, HEX);
         #endif
         send(0x04, pin, val);
+        break;
+
+      case PING_READ:
+        pin = cached[1];
+        us = pingRead(pin);
+
+        #if DEBUG
+        Serial.print("PIN: ");
+        Serial.println(pin, DEC);
+        Serial.print("VALUE: ");
+        Serial.println(us, DEC);
+        #endif
+
+        byte duration[6];
+
+        duration[0] = PING_READ;
+        duration[1] = pin;
+        duration[2] = (us >> 24) & 0xFF;
+        duration[3] = (us >> 16) & 0xFF;
+        duration[4] = (us >> 8) & 0xFF;
+        duration[5] = us & 0xFF;
+
+        #if DEBUG
+        for (int di = 0; di < 6; di++) {
+          Serial.print(duration[di]);Serial.print(" ");
+        }
+        #endif
+
+        server.write(duration, 6);
         break;
 
       case REPORTING: // Add pin to
@@ -986,108 +1070,4 @@ void loop() {
     // If no client is yet connected, check for a new connection
     client = server.available();
   }
-}
-
-int scan(int echoPin, int trigPin) {
-  // establish variables for duration of the ping,
-  // and the distance result in inches and centimeters:
-  long duration;
-  int distance;
-
-
-  // The sensor is triggered by a HIGH pulse of 10 or more microseconds.
-  // Give a short LOW pulse beforehand to ensure a clean HIGH pulse:
-  pinMode(trigPin, OUTPUT);
-  digitalWrite(trigPin, LOW);
-  delayMicroseconds(2);
-  digitalWrite(trigPin, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(trigPin, LOW);
-
-  // Read the signal from the sensor: a HIGH pulse whose
-  // duration is the time (in microseconds) from the sending
-  // of the ping to the reception of its echo off of an object.
-  pinMode(echoPin, INPUT);
-  duration = pulseIn(echoPin, HIGH);
-
-  // convert the time into a distance
-  distance = microsecondsToCentimeters(duration);
-  if(distance == 0){ //If no ping was recieved
-    distance = 100; //Set the distance to max
-  }
-  delay(10);
-  return distance;
-}
-
-long microsecondsToCentimeters(long microseconds)
-{
-  // The speed of sound is 340 m/s or 29 microseconds per centimeter.
-  // The ping travels out and back, so to find the distance of the
-  // object we take half of the distance travelled.
-  return microseconds / 29 / 2;
-}
-
-/*
-  Copyright (c) 2014, Timothy Brown
-  All rights reserved.
-
-  Redistribution and use in source and binary forms, with or without modification,
-  are permitted provided that the following conditions are met:
-
-  * Redistributions of source code must retain the above copyright notice, this
-  list of conditions and the following disclaimer.
-
-  * Redistributions in binary form must reproduce the above copyright notice, this
-  list of conditions and the following disclaimer in the documentation and/or
-  other materials provided with the distribution.
-
-  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
-  ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-  ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
-/*
- * pulseIn Function for the Spark Core - Version 0.1.1 (Beta)
- * Copyright (2014) Timothy Brown - See: LICENSE
- *
- * Due to the current timeout issues with Spark Cloud
- * this will return after 10 seconds, even if the
- * input pulse hasn't finished.
- *
- * Input: Trigger Pin, Trigger State
- * Output: Pulse Length in Microseconds (10uS to 10S)
- *
- */
-
-unsigned long pulseIn(uint16_t pin, uint8_t state) {
-
-  GPIO_TypeDef* portMask = (PIN_MAP[pin].gpio_peripheral); // Cache the target's peripheral mask to speed up the loops.
-  uint16_t pinMask = (PIN_MAP[pin].gpio_pin); // Cache the target's GPIO pin mask to speed up the loops.
-  unsigned long pulseCount = 0; // Initialize the pulseCount variable now to save time.
-  unsigned long loopCount = 0; // Initialize the loopCount variable now to save time.
-  unsigned long loopMax = 20000000; // Roughly just under 10 seconds timeout to maintain the Spark Cloud connection.
-
-  // Wait for the pin to enter target state while keeping track of the timeout.
-  while (GPIO_ReadInputDataBit(portMask, pinMask) != state) {
-    if (loopCount++ == loopMax) {
-      return 0;
-    }
-  }
-
-  // Iterate the pulseCount variable each time through the loop to measure the pulse length; we also still keep track of the timeout.
-  while (GPIO_ReadInputDataBit(portMask, pinMask) == state) {
-    if (loopCount++ == loopMax) {
-      return 0;
-    }
-    pulseCount++;
-  }
-
-  // Return the pulse time in microseconds by multiplying the pulseCount variable with the time it takes to run once through the loop.
-  return pulseCount * 0.405; // Calculated the pulseCount++ loop to be about 0.405uS in length.
 }
