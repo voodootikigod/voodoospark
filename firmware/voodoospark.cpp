@@ -160,17 +160,21 @@ TCPClient client;
 bool hasAction = false;
 bool isConnected = false;
 
+byte analogReporting[20];
 byte buffer[MAX_DATA_BYTES];
 byte cached[64];
-byte reporting[20];
+byte i2cRxData[64];
 byte pinModeFor[20];
-byte analogReporting[20];
 byte portValues[2];
+byte reporting[20];
 
-int reporters = 0;
+int action, available;
 int bytesRead = 0;
 int bytesExpecting = 0;
-int action, available;
+int reporters = 0;
+
+// Default delay time between i2c read request and Wire.requestFrom()
+unsigned int i2cReadDelayTime = 0;
 
 unsigned long lastms;
 unsigned long nowms;
@@ -179,10 +183,6 @@ unsigned long SerialSpeed[] = {
   600, 1200, 2400, 4800, 9600, 14400, 19200, 28800, 38400, 57600, 115200
 };
 
-byte i2cRxData[64];
-signed char queryIndex = -1;
-// default delay time between i2c read request and Wire.requestFrom()
-unsigned int i2cReadDelayTime = 0;
 
 /*
   PWM/Servo support is CONFIRMED available on:
@@ -572,19 +572,19 @@ void processInput() {
         #endif
         send(0x03, pin, val);
         break;
-     
+
       case PING_READ:
         pin = cached[1]; // echo pin
         val = cached[2]; // trig pin
         distance = scan(pin, val);
-        
+
         #if DEBUG
         Serial.print("PIN: ");
         Serial.println(pin, DEC);
         Serial.print("VALUE: ");
         Serial.println(distance, HEX);
         #endif
-        
+
         send(0x08, pin, distance);
         break;
 
@@ -780,14 +780,14 @@ void processInput() {
         pinModeFor[0] = 0x06;
         pinModeFor[1] = 0x06;
 
-        if ( !Wire.isEnabled() ) {
+        if (!Wire.isEnabled()) {
           #if DEBUG
           Serial.println("******* Enable I2C ******");
           #endif
 
           Wire.begin();
         }
-        
+
         break;
 
       case I2C_WRITE:
@@ -843,7 +843,7 @@ void processInput() {
 
         readAndReportI2cData(address, reg, val);
         break;
-      
+
       case SERVO_WRITE:
         pin = cached[1];
         val = cached[2];
@@ -992,7 +992,7 @@ int scan(int echoPin, int trigPin) {
   // and the distance result in inches and centimeters:
   long duration;
   int distance;
-  
+
 
   // The sensor is triggered by a HIGH pulse of 10 or more microseconds.
   // Give a short LOW pulse beforehand to ensure a clean HIGH pulse:
