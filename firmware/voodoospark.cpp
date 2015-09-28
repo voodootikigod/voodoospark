@@ -300,12 +300,13 @@ void restore() {
   nowms = 0;
   sampleInterval = 100;
 
-  memset(&buffer[0], 0, MAX_DATA_BYTES);
-  memset(&cached[0], 0, 4);
-  memset(&pinModeFor[0], 0, 20);
-  memset(&reporting[0], 0, 20);
   memset(&analogReporting[0], 0, 20);
+  memset(&buffer[0], 0, MAX_DATA_BYTES);
+  memset(&cached[0], 0, 64);
+  memset(&i2cRxData[0], 0, 64);
+  memset(&pinModeFor[0], 0, 20);
   memset(&portValues[0], 0, 2);
+  memset(&reporting[0], 0, 20);
 
   for (int i = 0; i < 8; i++) {
     if (servos[i].attached()) {
