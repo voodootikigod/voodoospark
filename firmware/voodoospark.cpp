@@ -3,7 +3,7 @@
   * @file    voodoospark.cpp
   * @author  Chris Williams
   * @version V2.7.2
-  * @date    16-June-2015
+  * @date    30-Sept-2015
   * @brief   Exposes the firmware level API through a TCP Connection initiated
   *          to the Particle devices (Core and Photon)
   ******************************************************************************
@@ -37,6 +37,7 @@
 #define DEBUG 0
 #define PORT 48879
 #define MAX_DATA_BYTES 128
+#define MAX_I2C_READ_CONTINUOUS_DEVICES 8
 
 // table of action codes
 // to do: make this an enum?
@@ -69,7 +70,8 @@
 #define I2C_CONFIG                  0x30
 #define I2C_WRITE                   0x31
 #define I2C_READ                    0x32
-#define I2C_REGISTER_NOT_SPECIFIED  -1
+#define I2C_READ_CONTINUOUS       0x33
+#define I2C_REGISTER_NOT_SPECIFIED  0xFF
 /* NOTE GAP */
 #define SERVO_WRITE                 0x41
 #define ACTION_RANGE                0x46
@@ -133,8 +135,8 @@ uint8_t bytesToExpectByAction[] = {
   2,    // I2C_CONFIG
   3,    // I2C_WRITE -- variable length message!
   5,    // I2C_READ
-  // gap from 0x33-0x3f
-  0,    // 0x33
+  5,    // I2C_READ_CONTINUOUS
+  // gap from 0x34-0x3f
   0,    // 0x34
   0,    // 0x35
   0,    // 0x36
@@ -173,6 +175,8 @@ int bytesRead = 0;
 int bytesExpecting = 0;
 int reporters = 0;
 
+signed int i2cIndex = -1;
+
 // Default delay time between i2c read request and Wire.requestFrom()
 unsigned int i2cReadDelayTime = 0;
 
@@ -183,6 +187,15 @@ unsigned long SerialSpeed[] = {
   600, 1200, 2400, 4800, 9600, 14400, 19200, 28800, 38400, 57600, 115200
 };
 
+/* i2c data */
+struct I2CDevice {
+  byte address;
+  int reg;
+  byte bytes;
+};
+
+/* Track I2C continuous read devices */
+I2CDevice i2cDevices[MAX_I2C_READ_CONTINUOUS_DEVICES];
 
 /*
   PWM/Servo support is CONFIRMED available on:
@@ -216,112 +229,11 @@ void send(int action, int pinOrPort, int pinOrPortValue) {
   buf[0] = action;
   buf[1] = pinOrPort;
   // LSB
-  buf[2] = pinOrPortValue & 0x7f;
+  buf[2] = pinOrPortValue & 0x7F;
   // MSB
-  buf[3] = pinOrPortValue >> 0x07 & 0x7f;
+  buf[3] = pinOrPortValue >> 0x07 & 0x7F;
 
   server.write(buf, 4);
-}
-
-void report() {
-  if (isConnected) {
-
-    #if DEBUG
-    Serial.println("--------------REPORTING");
-    #endif
-
-    int pin;
-    int pinValue;
-    int i;
-
-    for (int k = 0; k < 2; k++) {
-      bool shouldSend = false;
-      // D0-D7
-      // portValues[0] = 0;
-      // A0-A7
-      // portValues[1] = 0;
-      portValues[k] = 0;
-
-      for (i = 0; i < 8; i++) {
-        pin = (k * 10) + i;
-
-        if (reporting[pin] == 1) {
-          shouldSend = true;
-          pinValue = digitalRead(pin);
-
-          if (pinValue) {
-            portValues[k] = (portValues[k] | pinValue) << i;
-          }
-        }
-      }
-
-      if (shouldSend) {
-        #if DEBUG
-        Serial.print("Reporting: ");
-        Serial.print(k, DEC);
-        Serial.println(portValues[k], DEC);
-        #endif
-
-        send(REPORTING, k, portValues[k]);
-      }
-    }
-
-    for (i = 10; i < 18; i++) {
-      if (analogReporting[i] == 1) {
-        int adc = analogRead(i);
-
-        #if DEBUG
-        Serial.print("Analog Reporting: ");
-        Serial.print(i, DEC);
-        Serial.print(": ");
-        Serial.println(adc, DEC);
-        #endif
-
-        send(ANALOG_READ, i, adc);
-        delay(1);
-      }
-    }
-  }
-}
-
-void restore() {
-  #if DEBUG
-  Serial.println("--------------RESTORING");
-  #endif
-
-  hasAction = false;
-  isConnected = false;
-
-  reporters = 0;
-  bytesRead = 0;
-  bytesExpecting = 0;
-
-  lastms = 0;
-  nowms = 0;
-  sampleInterval = 100;
-
-  memset(&analogReporting[0], 0, 20);
-  memset(&buffer[0], 0, MAX_DATA_BYTES);
-  memset(&cached[0], 0, 64);
-  memset(&i2cRxData[0], 0, 64);
-  memset(&pinModeFor[0], 0, 20);
-  memset(&portValues[0], 0, 2);
-  memset(&reporting[0], 0, 20);
-
-  for (int i = 0; i < 8; i++) {
-    if (servos[i].attached()) {
-      servos[i].detach();
-    }
-  }
-
-  // Restore defaults.
-  for (int i = 0; i < 8; i++) {
-    pinMode(i, OUTPUT);
-    pinMode(i + 10, INPUT);
-
-    pinModeFor[i] = 1;
-    pinModeFor[i + 10] = 0;
-  }
 }
 
 void setup() {
@@ -367,7 +279,7 @@ void readAndReportI2cData(byte address, int theRegister, byte numBytes) {
       delayMicroseconds(i2cReadDelayTime);
     }
   } else {
-    theRegister = 0;  // fill the register with a dummy value
+    theRegister = 0xFF;  // fill the register with an impossible value
   }
 
   Wire.requestFrom(address, numBytes);  // all bytes are returned in requestFrom
@@ -384,8 +296,8 @@ void readAndReportI2cData(byte address, int theRegister, byte numBytes) {
   i2cRxData[0] = 0x77;
   i2cRxData[1] = numBytes;
   i2cRxData[2] = address;
-  i2cRxData[3] = theRegister & 0x7f;
-  i2cRxData[4] = theRegister >> 0x07 & 0x7f;
+  i2cRxData[3] = theRegister & 0x7F;
+  i2cRxData[4] = theRegister >> 0x07 & 0x7F;
 
   #if DEBUG
   Serial.print("Number of Bytes: ");
@@ -509,6 +421,117 @@ void cacheBuffer(int byteCount, int cacheLength) {
   Serial.println("");
   #endif
 }
+
+
+void report() {
+  if (isConnected) {
+
+    #if DEBUG
+    Serial.println("--------------REPORTING");
+    #endif
+
+    int pin;
+    int pinValue;
+    int i;
+
+    for (int k = 0; k < 2; k++) {
+      bool shouldSend = false;
+      // D0-D7
+      // portValues[0] = 0;
+      // A0-A7
+      // portValues[1] = 0;
+      portValues[k] = 0;
+
+      for (i = 0; i < 8; i++) {
+        pin = (k * 10) + i;
+
+        if (reporting[pin] == 1) {
+          shouldSend = true;
+          pinValue = digitalRead(pin);
+
+          if (pinValue) {
+            portValues[k] = (portValues[k] | pinValue) << i;
+          }
+        }
+      }
+
+      if (shouldSend) {
+        #if DEBUG
+        Serial.print("Reporting: ");
+        Serial.print(k, DEC);
+        Serial.println(portValues[k], DEC);
+        #endif
+
+        send(REPORTING, k, portValues[k]);
+      }
+    }
+
+    for (i = 10; i < 18; i++) {
+      if (analogReporting[i] == 1) {
+        int adc = analogRead(i);
+
+        #if DEBUG
+        Serial.print("Analog Reporting: ");
+        Serial.print(i, DEC);
+        Serial.print(": ");
+        Serial.println(adc, DEC);
+        #endif
+
+        send(ANALOG_READ, i, adc);
+        delay(1);
+      }
+    }
+
+    // Report I2C_READ_CONTINUOUS devices
+    if (i2cIndex != -1) {
+      for (i = 0; i <= i2cIndex; i++) {
+        readAndReportI2cData(i2cDevices[i].address, i2cDevices[i].reg, i2cDevices[i].bytes);
+      }
+    }
+  }
+}
+
+void restore() {
+  #if DEBUG
+  Serial.println("--------------RESTORING");
+  #endif
+
+  hasAction = false;
+  isConnected = false;
+
+  reporters = 0;
+  bytesRead = 0;
+  bytesExpecting = 0;
+
+  i2cIndex = -1;
+  lastms = 0;
+  nowms = 0;
+  sampleInterval = 100;
+
+  memset(&analogReporting[0], 0, 20);
+  memset(&buffer[0], 0, MAX_DATA_BYTES);
+  memset(&cached[0], 0, 64);
+  memset(&i2cRxData[0], 0, 64);
+  memset(&pinModeFor[0], 0, 20);
+  memset(&portValues[0], 0, 2);
+  memset(&reporting[0], 0, 20);
+
+  for (int i = 0; i < 8; i++) {
+    if (servos[i].attached()) {
+      servos[i].detach();
+    }
+  }
+
+  // Restore defaults.
+  for (int i = 0; i < 8; i++) {
+    pinMode(i, OUTPUT);
+    pinMode(i + 10, INPUT);
+
+    pinModeFor[i] = 1;
+    pinModeFor[i + 10] = 0;
+  }
+}
+
 
 void processInput() {
   int pin, mode, val, type, speed, address, reg, stop, len, k, i, delayTime, dataLength;
@@ -913,6 +936,7 @@ void processInput() {
         break;
 
       case I2C_READ:
+      case I2C_READ_CONTINUOUS:
         address = cached[1];
         reg = cached[2] + (cached[3] << 7);  // register
         val = cached[4] + (cached[5] << 7);  // bytes to read
@@ -926,7 +950,27 @@ void processInput() {
         Serial.println(val);
         #endif
 
-        readAndReportI2cData(address, reg, val);
+        // reg was a dummy
+        if (reg == 0xFF) {
+          reg = (int)I2C_REGISTER_NOT_SPECIFIED;
+          #if DEBUG
+          Serial.println("I2C_REGISTER_NOT_SPECIFIED");
+          #endif
+        }
+
+        if (action == I2C_READ_CONTINUOUS) {
+          if ((i2cIndex + 1) > MAX_I2C_READ_CONTINUOUS_DEVICES) {
+            // TODO: need to add an error protocol.
+            // For now, it's unlikely that this will be an issue.
+          }
+          i2cIndex++;
+          i2cDevices[i2cIndex].address = address;
+          i2cDevices[i2cIndex].reg = reg;
+          i2cDevices[i2cIndex].bytes = val;
+        } else {
+          readAndReportI2cData(address, reg, val);
+        }
+
         break;
 
       case SERVO_WRITE:
@@ -1056,7 +1100,7 @@ void loop() {
     // Otherwise the device becomes unreliable and
     // exhibits a higher crash frequency.
     nowms = millis();
-    if (nowms - lastms > sampleInterval && reporters > 0) {
+    if (nowms - lastms > sampleInterval && (reporters > 0 || i2cIndex > -1)) {
       // possible just assign the value of nowms?
       lastms += sampleInterval;
       report();
