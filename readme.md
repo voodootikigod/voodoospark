@@ -87,6 +87,7 @@ See [LICENSE](https://github.com/voodootikigod/voodoospark/blob/master/LICENSE-M
 
 This firmware is made and cared for by the following awesome people:
 
-* Chris Williams https://github.com/voodootikigod
-* Rick Waldron https://github.com/rwaldron
-* David Resseguie https://github.com/Resseguie
+- Chris Williams https://github.com/voodootikigod
+- Rick Waldron https://github.com/rwaldron
+- David Resseguie https://github.com/Resseguie
+- Brian Genisio https://github.com/BrianGenisio
