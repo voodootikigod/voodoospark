@@ -2,7 +2,7 @@
   ******************************************************************************
   * @file    voodoospark.cpp
   * @author  Chris Williams
-  * @version V3.0.0-pre
+  * @version V3.0.0
   * @date    30-Sept-2015
   * @brief   Exposes the firmware level API through a TCP Connection initiated
   *          to the Particle devices (Core and Photon)
