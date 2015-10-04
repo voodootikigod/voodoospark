@@ -2,7 +2,7 @@
   ******************************************************************************
   * @file    voodoospark.cpp
   * @author  Chris Williams
-  * @version V3.0.0
+  * @version V3.1.0
   * @date    30-Sept-2015
   * @brief   Exposes the firmware level API through a TCP Connection initiated
   *          to the Particle devices (Core and Photon)
@@ -70,7 +70,7 @@
 #define I2C_CONFIG                  0x30
 #define I2C_WRITE                   0x31
 #define I2C_READ                    0x32
-#define I2C_READ_CONTINUOUS       0x33
+#define I2C_READ_CONTINUOUS         0x33
 #define I2C_REGISTER_NOT_SPECIFIED  0xFF
 /* NOTE GAP */
 #define SERVO_WRITE                 0x41
