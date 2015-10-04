@@ -211,12 +211,25 @@ Servo servos[8];
   servo object.
  */
 int ToServoIndex(int pin) {
-  // D0, D1
-  if (pin == 0 || pin == 1) return pin;
-  // A0, A1
-  if (pin == 10 || pin == 11) return pin - 8;
-  // A4, A5, A6, A7
-  if (pin >= 14) return pin - 10;
+  #if PLATFORM_ID == PLATFORM_PHOTON_PRODUCTION || \
+      PLATFORM_ID == PLATFORM_P1
+    // Pin:   D0, D1, D2, D3
+    // Index:  0,  1,  2,  3
+    if (pin == 0 || pin == 1 || pin == 2 || pin == 3) return pin;
+    // Pin:   A4, A5
+    // Index:  4,  5
+    if (pin >= 14) return pin - 10;
+  #else
+    // Pin:   D0, D1
+    // Index:  0,  1
+    if (pin == 0 || pin == 1) return pin;
+    // Pin:   A0, A1
+    // Index:  2,  3
+    if (pin == 10 || pin == 11) return pin - 8;
+    // Pin:   A4, A5, A6, A7
+    // Index:  4,  5,  6,  7
+    if (pin >= 14) return pin - 10;
+  #endif
 }
 
 void send(int action, int pinOrPort, int pinOrPortValue) {
