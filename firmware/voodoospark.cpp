@@ -76,6 +76,12 @@
 #define SERVO_WRITE                 0x41
 #define ACTION_RANGE                0x46
 
+#define IS_PHOTON() PLATFORM_ID == PLATFORM_PHOTON_PRODUCTION || \
+                    PLATFORM_ID == PLATFORM_P1
+
+#define IS_CORE() PLATFORM_ID == PLATFORM_SPARK_CORE || \
+                    PLATFORM_ID == PLATFORM_SPARK_CORE_HD
+
 uint8_t bytesToExpectByAction[] = {
   // digital/analog I/O
   2,    // PIN_MODE
@@ -182,10 +188,14 @@ unsigned int i2cReadDelayTime = 0;
 
 unsigned long lastms;
 unsigned long nowms;
-unsigned long sampleInterval = 100;
 unsigned long SerialSpeed[] = {
   600, 1200, 2400, 4800, 9600, 14400, 19200, 28800, 38400, 57600, 115200
 };
+#if IS_PHOTON()
+  unsigned long sampleInterval = 20;
+#else
+  unsigned long sampleInterval = 100;
+#endif
 
 /* i2c data */
 struct I2CDevice {
@@ -211,13 +221,12 @@ Servo servos[8];
   servo object.
  */
 int ToServoIndex(int pin) {
-  #if PLATFORM_ID == PLATFORM_PHOTON_PRODUCTION || \
-      PLATFORM_ID == PLATFORM_P1
+  #if IS_PHOTON()
     // Pin:   D0, D1, D2, D3
     // Index:  0,  1,  2,  3
     if (pin == 0 || pin == 1 || pin == 2 || pin == 3) return pin;
-    // Pin:   A4, A5
-    // Index:  4,  5
+    // Pin:   A4, A5, A6, A7
+    // Index:  4,  5,  6,  7
     if (pin >= 14) return pin - 10;
   #else
     // Pin:   D0, D1
@@ -232,19 +241,28 @@ int ToServoIndex(int pin) {
   #endif
 }
 
+void ToUInt7Array(long value, uint8_t b[]) {
+  // LSB
+  b[0] = value & 0x7F;
+  // MSB
+  b[1] = value >> 0x07 & 0x7F;
+}
+
 void send(int action, int pinOrPort, int pinOrPortValue) {
   uint8_t buf[4];
+  uint8_t u7[2];
 
   // See https://github.com/voodootikigod/voodoospark/issues/20
   // to understand why the send function splits values
   // into two 7-bit bytes before sending.
+  ToUInt7Array(pinOrPortValue, u7);
 
   buf[0] = action;
   buf[1] = pinOrPort;
   // LSB
-  buf[2] = pinOrPortValue & 0x7F;
+  buf[2] = u7[0];
   // MSB
-  buf[3] = pinOrPortValue >> 0x07 & 0x7F;
+  buf[3] = u7[1];
 
   server.write(buf, 4);
 }
@@ -263,7 +281,7 @@ void setup() {
   // https://community.particle.io/t/network-localip-to-string-to-get-it-via-spark-variable/2581/5
   sprintf(ipAddress, "%d.%d.%d.%d:%d", ip[0], ip[1], ip[2], ip[3], PORT);
 
-  Spark.variable("endpoint", ipAddress, STRING);
+  Particle.variable("endpoint", ipAddress, STRING);
 }
 
 void readAndReportI2cData(byte address, int theRegister, byte numBytes) {
@@ -547,7 +565,7 @@ void restore() {
 
 
 void processInput() {
-  int pin, mode, val, type, speed, address, reg, stop, len, k, i, delayTime, dataLength;
+  int pin, mode, val, address, reg, delayTime, dataLength;
   int byteCount = bytesRead;
 
   unsigned long us;
@@ -630,7 +648,9 @@ void processInput() {
           }
           if (mode == 0x02) {
             // ANALOG INPUT
-            pinMode(pin, INPUT);
+            #if IS_CORE()
+              pinMode(pin, INPUT);
+            #endif
           }
           if (mode == 0x03) {
             // ANALOG (PWM) OUTPUT
