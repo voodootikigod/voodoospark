@@ -419,7 +419,7 @@ unsigned long pingRead(int pin) {
 
   pinMode(pin, INPUT);
 
-  unsigned long duration = pulseIn(pin, HIGH);
+  unsigned long duration = pulseIn((uint16_t)pin, (uint8_t)HIGH);
 
   return duration;
 }
