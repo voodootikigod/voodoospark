@@ -372,7 +372,7 @@ void readAndReportI2cData(byte address, int theRegister, byte numBytes) {
  *
  */
 
-unsigned long pulseIn(uint16_t pin, uint8_t state) {
+unsigned long pingPulseIn(uint16_t pin, uint8_t state) {
   #if (PLATFORM_ID == 0)  // Core
     STM32_Pin_Info* PIN_MAP = HAL_Pin_Map(); // Pointer required for highest access speed
   #endif
@@ -419,7 +419,7 @@ unsigned long pingRead(int pin) {
 
   pinMode(pin, INPUT);
 
-  unsigned long duration = pulseIn((uint16_t)pin, (uint8_t)HIGH);
+  unsigned long duration = pingPulseIn((uint16_t)pin, (uint8_t)HIGH);
 
   return duration;
 }
