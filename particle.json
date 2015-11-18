@@ -2,6 +2,6 @@
   "name": "voodoospark",
   "author": "Chris Williams <voodootikigod@gmail.com>",
   "license": "MIT",
-  "version": "3.1.1",
+  "version": "3.1.2",
   "description": "TCP enabled IO protocol for Particle Device (Core, Photon) communication"
 }
