@@ -481,7 +481,7 @@ void report() {
           pinValue = digitalRead(pin);
 
           if (pinValue) {
-            portValues[k] = (portValues[k] | pinValue) << i;
+            portValues[k] |= 1 << i;
           }
         }
       }
