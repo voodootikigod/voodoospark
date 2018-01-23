@@ -2,7 +2,7 @@
   ******************************************************************************
   * @file    voodoospark.cpp
   * @author  Chris Williams
-  * @version V4.0.0
+  * @version V4.1.0
   * @date    08-March-2016
   * @brief   Exposes the firmware level API through a TCP Connection initiated
   *          to the Particle devices (Core and Photon)
@@ -74,6 +74,7 @@
 #define I2C_REGISTER_NOT_SPECIFIED  0xFF
 /* NOTE GAP */
 #define SERVO_WRITE                 0x41
+#define SERVO_WRITE_MICROSECONDS    0x43
 #define ACTION_RANGE                0x46
 
 #define IS_PHOTON() PLATFORM_ID == PLATFORM_PHOTON_PRODUCTION || \
@@ -159,6 +160,7 @@ uint8_t bytesToExpectByAction[] = {
   // servo
   2,    // SERVO_WRITE
   1,    // SERVO_DETACH
+  3,    // SERVO_WRITE_MICROSECONDS
 };
 
 
@@ -1016,6 +1018,18 @@ void processInput() {
         Serial.println(val);
         #endif
         servos[ToServoIndex(pin)].write(val);
+        break;
+
+      case SERVO_WRITE_MICROSECONDS:
+        pin = cached[1];
+        val = cached[2] + (cached[3] << 7);
+        #if DEBUG
+        Serial.print("PIN: ");
+        Serial.println(pin);
+        Serial.print("WRITING MICROSECONDS TO SERVO: ");
+        Serial.println(val);
+        #endif
+        servos[ToServoIndex(pin)].writeMicroseconds(val);
         break;
 
       case INTERNAL_RGB:
